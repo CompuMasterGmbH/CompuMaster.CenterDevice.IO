@@ -72,7 +72,7 @@ namespace CenterDevice.Rest.Clients
             return result;
         }
 
-        static StringBuilder PrintSubFolders(Rest.Clients.Folders.Folder parentFolder)
+        static StringBuilder PrintSubFolders(CenterDevice.Rest.Clients.Folders.Folder parentFolder)
         {
             var result = new StringBuilder();
             if ((parentFolder.SubFolders != null) && (parentFolder.SubFolders.Count != 0))
@@ -83,7 +83,7 @@ namespace CenterDevice.Rest.Clients
             return result;
         }
 
-        private static StringBuilder PrintSubFolders(List<Rest.Clients.Folders.Folder> Folders)
+        private static StringBuilder PrintSubFolders(List<CenterDevice.Rest.Clients.Folders.Folder> Folders)
         {
             var result = new StringBuilder();
             var sb = new StringBuilder();
@@ -140,7 +140,7 @@ namespace CenterDevice.Rest.Clients
             return result;
         }
 
-        static StringBuilder PrintFiles(List<Rest.Clients.Documents.Metadata.DocumentFullMetadata> documents)
+        static StringBuilder PrintFiles(List<CenterDevice.Rest.Clients.Documents.Metadata.DocumentFullMetadata> documents)
         {
             var result = new StringBuilder();
             if (documents != null)
