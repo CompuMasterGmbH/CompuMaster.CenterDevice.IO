@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.32112.339
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11222.15 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CenterDevice.SampleApp", "CenterDevice.SampleApp\CenterDevice.SampleApp.csproj", "{2FBE013B-7B2B-410B-9667-DFB060EBC82E}"
 EndProject
@@ -12,6 +12,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompuMaster.Scopevisio.Teamwork.MiniClone", "Scopevisio.Teamwork\CompuMaster.Scopevisio.Teamwork.MiniClone.csproj", "{1878F1A6-B870-4AD4-AC7A-62430667740F}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "CenterDevice.Teamwork.Test", "Scopevisio.Teamwork.Test\CenterDevice.Teamwork.Test.vbproj", "{A3DD8AEF-9B08-43AF-9AA7-074F653C0CDF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{62211928-63FE-4EEF-9019-291E9AFD65F4}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\BuildAndTest.yml = .github\workflows\BuildAndTest.yml
+		.github\workflows\PublishRelease.yml = .github\workflows\PublishRelease.yml
+		README.md = README.md
+		.github\workflows\WeeklyBuildAndTest.yml = .github\workflows\WeeklyBuildAndTest.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
