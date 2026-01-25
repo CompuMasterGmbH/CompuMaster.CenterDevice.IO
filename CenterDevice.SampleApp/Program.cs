@@ -12,25 +12,33 @@ namespace CenterDevice.SampleApp
         {
             System.Console.WriteLine("PLEASE NOTE: Following user input will be buffered in directory " + System.IO.Path.GetTempPath());
             string username = InputLine("username");
-            string customerno = InputLine("customer no.");
+            //string customerno = InputLine("customer no.");
             string password = InputLine("password");
 
             try
             {
+                string ClientCredentials = username + ":" + password;
+                string EncodedClientCredentials = System.Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(ClientCredentials));
+                System.Console.WriteLine("Authorization header:\nAuthorization: Basic " + EncodedClientCredentials);
+                System.Console.WriteLine();
+
                 //Authorize initially with user credentials -> recieved access token will be saved for following requests
                 //TODO: somethine like CenterDeviceClient.AuthorizeWithUserCredentials(username, customerno, password);
-                //System.Console.WriteLine("Authorization successful, future requests can be executed with access token:\n" + CenterDeviceClient.Token.AccessToken);
-                //System.Console.WriteLine();
+                CenterDevice.Rest.Clients.CenterDeviceClient CenterDeviceClient = new CenterDevice.Rest.Clients.CenterDeviceClient();
+                CenterDeviceClient.AuthorizeWithUserCredentials(username, password);
+                //CenterDeviceClient.AuthorizeWithUserCredentials(username, customerno, password);
+                System.Console.WriteLine("Authorization successful, future requests can be executed with access token:\n" + CenterDeviceClient.Token.access_token);
+                System.Console.WriteLine();
 
                 //Create IO client for CenterDevice 
-                CenterDevice.IO.CenterDeviceIOClient IOClient = null;
-                /* TODO:something like
-                CenterDevice.IO.CenterDeviceIOClient IOClient = new CenterDevice.IO.CenterDeviceIOClient(
-                    new CenterDevice.Rest.Clients.CenterDeviceClient(
-                        oAuthInfoProvider, configuration, errorHandler
-                        ), 
-                    userID);  //TODO: provide arguments as usual for CenterDevice REST client
-                */
+                CenterDevice.IO.CenterDeviceIOClient IOClient = new CenterDevice.IO.CenterDeviceIOClient(CenterDeviceClient);
+                //CenterDevice.IO.CenterDeviceIOClient IOClient = new CenterDevice.IO.CenterDeviceIOClient(
+                //    new CenterDevice.Rest.Clients.CenterDeviceClient(
+                //        oAuthInfoProvider, 
+                //        configuration.OAuthConfiguration(), 
+                //        new CenterDevice.Rest.Clients.CenterDeviceErrorHandler(username, oAuthInfoProvider)
+                //        ), 
+                //    username);  //TODO: provide arguments as usual for CenterDevice REST client
 
                 //Show available directory structure
                 if (true)
