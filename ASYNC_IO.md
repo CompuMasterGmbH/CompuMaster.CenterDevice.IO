@@ -14,7 +14,9 @@ Mutations are not automatically replayed after timeouts or uncertain server erro
 
 ## Authentication and remaining integration work
 
-Asynchronous authentication implementations can interrupt their own active requests. Legacy synchronous authentication callbacks are serialized on a worker; cancellation can stop waiting, but cannot interrupt an active legacy callback. The synchronous high-level `CenterDevice.IO` facade and the existing Teamwork adapter still need their follow-up native composition. This change does not claim that those paths are already fully asynchronous.
+Asynchronous authentication implementations can interrupt their own active requests. Legacy synchronous authentication callbacks are serialized on a worker; cancellation can stop waiting, but cannot interrupt an active legacy callback. The synchronous high-level `CenterDevice.IO` facade still needs native composition; the separate Teamwork authorization adapter is being developed against the unpublished dependency sources. This change does not claim that those paths are already fully asynchronous.
+
+`CenterDeviceHttpTransport.CreateHttpClient` allows an external authorization/account client to share this same per-origin policy. Configure its HTTP client before its first request; the caller owns the returned client and inner handler. Existing unrelated transports are not retroactively limited.
 
 Direct CenterDevice authentication is still subject to the limitations of the existing provider. No new support is claimed for previously unsupported server operations.
 
@@ -27,6 +29,6 @@ dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --f
 dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --framework net48 -c CI_CD -p:GeneratePackageOnBuild=false
 ```
 
-The current suite passes **23 tests on each framework**, with fake HTTP handlers and clocks. Coverage includes separate-client admission, active request cancellation, unread-response disposal, rate windows, shared Retry-After cooldown, retry budgets, unreplayed writes, native authorization dispatch, a simulated 5-GB download and upload, filename escaping, and stream ownership/error paths. The library builds for `netstandard2.0`, `net6.0` and `net48`. The existing `log4net` package audit warning remains unchanged.
+The current suite passes **24 tests on each framework**, with fake HTTP handlers and clocks. Coverage includes separate-client admission, active request cancellation, unread-response disposal, rate windows, shared Retry-After cooldown, retry budgets, unreplayed writes, native authorization dispatch, a simulated 5-GB download and upload, filename escaping, and stream ownership/error paths. The library builds for `netstandard2.0`, `net6.0` and `net48`. The existing `log4net` package audit warning remains unchanged.
 
 No local remote integration tests were run. The parallelized remote regression in issue #8 remains ignored until its original acceptance criteria are verified with coordinated server access. A green isolated suite does not complete that issue.
