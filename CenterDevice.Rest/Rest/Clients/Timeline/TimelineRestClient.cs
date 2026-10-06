@@ -10,7 +10,7 @@ using System.Net;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Timeline
 {
-    public class TimelineRestClient : CenterDeviceRestClient, ITimelineRestClient
+    public partial class TimelineRestClient : CenterDeviceRestClient, ITimelineRestClient
     {
         private string URI_RESOURCE
         {

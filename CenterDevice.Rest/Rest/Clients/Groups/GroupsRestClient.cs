@@ -9,7 +9,7 @@ using System;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Groups
 {
-    public class GroupsRestClient : CenterDeviceRestClient, IGroupsRestClient
+    public partial class GroupsRestClient : CenterDeviceRestClient, IGroupsRestClient
     {
         private string URI_RESOURCE
         {

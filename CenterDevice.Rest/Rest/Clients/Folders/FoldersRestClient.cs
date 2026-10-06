@@ -8,7 +8,7 @@ using System.Linq;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Folders
 {
-    public class FoldersRestClient : CenterDeviceRestClient, IFoldersRestClient
+    public partial class FoldersRestClient : CenterDeviceRestClient, IFoldersRestClient
     {
         private string URI_RESOURCE
         {

@@ -8,7 +8,7 @@ using System.Text;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.OAuth
 {
-    public class OAuthRestClient : IOAuthRestClient
+    public partial class OAuthRestClient : IOAuthRestClient
     {
         private static ILog logger = LogManager.GetLogger(typeof(OAuthRestClient));
 
@@ -26,6 +26,7 @@ namespace CenterDevice.Rest.Clients.OAuth
 
             RestClientOptions options = new RestClientOptions(configuration.BaseAddress);
             options.UserAgent = configuration.UserAgent;
+            options.ConfigureMessageHandler = handler => new CenterDeviceHttpMessageHandler(handler);
             Client = new RestClient(options);
         }
 
@@ -49,7 +50,7 @@ namespace CenterDevice.Rest.Clients.OAuth
                 BuildRefreshTokenBodyMessage(oAuthInfo.refresh_token),
                 ParameterType.RequestBody);
 
-            return Client.ExecuteAsync<OAuthInfo>(request).Result;
+            return Client.ExecuteAsync<OAuthInfo>(request).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public RestResponse<OAuthInfo> DestroyToken(OAuthInfo oAuthInfo)
@@ -63,7 +64,7 @@ namespace CenterDevice.Rest.Clients.OAuth
                 BuildDestroyTokensBodyMessage(oAuthInfo.access_token, oAuthInfo.refresh_token),
                 ParameterType.RequestBody);
 
-            return Client.ExecuteAsync<OAuthInfo>(request).Result;
+            return Client.ExecuteAsync<OAuthInfo>(request).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private RestResponse<OAuthInfo> SwapToken(string body)
@@ -74,7 +75,7 @@ namespace CenterDevice.Rest.Clients.OAuth
 
             request.AddParameter(ContentType.APPLICATION_FORM_URLENCODED, body, ParameterType.RequestBody);
 
-            return Client.ExecuteAsync<OAuthInfo>(request).Result;
+            return Client.ExecuteAsync<OAuthInfo>(request).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private string BuildSwapTokenBodyMessageForEmailAndTenantId(string accessToken, string email, string tenantId)

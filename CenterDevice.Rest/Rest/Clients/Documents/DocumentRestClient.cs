@@ -10,11 +10,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
+using Newtonsoft.Json;
+using System.Globalization;
 
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Documents
 {
-    public class DocumentRestClient : CenterDeviceRestClient, IDocumentRestClient
+    public partial class DocumentRestClient : CenterDeviceRestClient, IDocumentRestClient
     {
         private string URI_RESOURCE
         {
@@ -58,29 +60,7 @@ namespace CenterDevice.Rest.Clients.Documents
 
         public Stream DownloadPreview(string userId, string id, PreviewSize size, long? version)
         {
-            var webRequest = CreatePreviewDocumentRequest(userId, id, size, version);
-            webRequest.Timeout = PREVIEW_TIMEOUT;
-
-            HttpWebResponse webResponse = null;
-            try
-            {
-                webResponse = (HttpWebResponse)webRequest.GetResponse();
-            }
-            catch (WebException e) when ((e.Response as HttpWebResponse)?.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new NotFoundException(e.Message, e);
-            }
-            catch (WebException e) when ((e.Response as HttpWebResponse)?.StatusCode == HttpStatusCode.NotAcceptable)
-            {
-                throw new NotAcceptableException(e.Message, e);
-            }
-
-            if (webResponse.StatusCode != HttpStatusCode.OK)
-            {
-                throw new RestClientException("Cannot download preview for document '" + id + "', received status code " + webResponse.StatusCode + ".");
-            }
-
-            return DocumentStreamUtils.WrapDownloadStream(webResponse.GetResponseStream(), streamWrapper);
+            return DownloadPreviewAsync(userId, id, size, version).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public Stream DownloadDocument(string userId, string id)
@@ -90,66 +70,7 @@ namespace CenterDevice.Rest.Clients.Documents
 
         public Stream DownloadDocument(string userId, string id, long? version, long? range)
         {
-            HttpWebRequest webRequest = CreateDownloadDocumentRequest(userId, id, version, range);
-            HttpWebResponse webResponse = null;
-            try
-            {
-                webResponse = (HttpWebResponse)webRequest.GetResponse();
-            }
-            catch (WebException e) when ((e.Response as HttpWebResponse)?.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
-            {
-                throw new RequestedRangeNotSatisfiableException("The requested range cannot be downloaded");
-            }
-            catch (WebException e) when ((e.Response as HttpWebResponse)?.StatusCode != HttpStatusCode.OK)
-            {
-                ThrowRestClientException(e, e.Response as HttpWebResponse);
-            }
-
-            ValidateResponse(webResponse, userId, range);
-            return DocumentStreamUtils.WrapDownloadStream(webResponse.GetResponseStream(), streamWrapper);
-        }
-
-        private static void ThrowRestClientException(Exception e, HttpWebResponse errorResponse)
-        {
-            var content = (errorResponse?.GetResponseStream() != null) ?
-                new StreamReader(errorResponse.GetResponseStream()).ReadToEnd()
-                : null;
-
-            throw RestClientExceptionUtils.CreateDefaultException(new List<HttpStatusCode> { HttpStatusCode.OK }, errorResponse?.StatusCode, content, e);
-        }
-
-        private HttpWebRequest CreateDownloadDocumentRequest(string userId, string id, long? version, long? range)
-        {
-            return CreateDownloadRequest(userId, range, GetDocumentDownloadUri(id, version));
-        }
-
-        private HttpWebRequest CreatePreviewDocumentRequest(string userId, string id, PreviewSize size, long? version)
-        {
-            var path = URI_RESOURCE + id;
-            if (version != null)
-            {
-                path += ";" + RestApiConstants.VERSION + "=" + version;
-            }
-            path += ";preview=" + size.ToApiParameter() + ";pages=1?wait-for-generation=10&include-error-info=false";
-
-            HttpWebRequest httpWebRequest = CreateDownloadRequest(userId, null, new Uri(new Uri(CustomOptionBaseAddress), path));
-            httpWebRequest.Accept = "image/png, image/jpeg";
-            return httpWebRequest;
-        }
-
-        private HttpWebRequest CreateDownloadRequest(string userId, long? range, Uri requestUri)
-        {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(requestUri);
-            webRequest.Headers.Add("Authorization", GetAuthorizationBearer(userId));
-            webRequest.Timeout = int.MaxValue;
-            webRequest.KeepAlive = false;
-            webRequest.ReadWriteTimeout = int.MaxValue;
-            webRequest.UserAgent = userAgent;
-            if (range != null)
-            {
-                webRequest.AddRange(range.Value);
-            }
-            return webRequest;
+            return DownloadDocumentAsync(userId, id, version, range).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private Uri GetDocumentDownloadUri(string id, long? version)
@@ -160,22 +81,6 @@ namespace CenterDevice.Rest.Clients.Documents
                 path += ";" + RestApiConstants.VERSION + "=" + version;
             }
             return new Uri(new Uri(CustomOptionBaseAddress), path);
-        }
-
-        private void ValidateResponse(HttpWebResponse webResponse, string userId, long? range)
-        {
-            if ((int)webResponse.StatusCode == TOO_MANY_REQUESTS)
-            {
-                throw new TooManyRequestsException(ExtractDelay(webResponse.Headers.Get(RETRY_AFTER)));
-            }
-            else if (webResponse.StatusCode != HttpStatusCode.OK && range == null)
-            {
-                throw new RestClientException("Received unexpected status code while trying to download document: " + webResponse.StatusCode);
-            }
-            else if (webResponse.StatusCode != HttpStatusCode.PartialContent && range != null)
-            {
-                throw new RestClientException("Received unexpected status code while trying to partially download document: " + webResponse.StatusCode);
-            }
         }
 
         public NewVersionUploadResponse UploadNewVersion(string userId, string id, string filename, string filepath)
@@ -190,40 +95,25 @@ namespace CenterDevice.Rest.Clients.Documents
 
         public NewVersionUploadResponse UploadNewVersion(string userId, string id, string filename, string filepath, CancellationToken token)
         {
-            RestRequest newVersionRequest = CreateRestRequest(URI_RESOURCE + id, Method.Post, ContentType.MULTIPART_FORM_DATA);
-            newVersionRequest.AlwaysMultipartFormData = true;
-            newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GetMetadata(filename, filepath), "application/json"));
-            DocumentStreamUtils.AddFileToUpload(newVersionRequest, "document", filepath, streamWrapper, token);
-            newVersionRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
-            //DEACTIVATED BY JW 2022-04-05 after upgrade to RestSharp 1.07 ("ReadWriteTimeout -> Not supported", https://restsharp.dev/v107/#reference)
-            //-> TODO: re-activate or find workaround for following line:
-            //newVersionRequest.ReadWriteTimeout = int.MaxValue; // Cannot use Timeout.Infinite here because resthsharp only uses this if > 0
-
-            var result = Execute<NewVersionUploadResponse>(GetOAuthInfo(userId), newVersionRequest);
-            return UnwrapResponse(result, new StatusCodeResponseHandler<NewVersionUploadResponse>(HttpStatusCode.Created));
+            return UploadNewVersionAsync(userId, id, filename, filepath, token).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         public NewVersionUploadResponse UploadNewVersion(string userId, string id, string filename, System.Func<Stream> fileDataStream, CancellationToken token)
         {
-            RestRequest newVersionRequest = CreateRestRequest(URI_RESOURCE + id, Method.Post, ContentType.MULTIPART_FORM_DATA);
-            newVersionRequest.AlwaysMultipartFormData = true;
-            newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GetMetadata(filename, fileDataStream), "application/json"));
-            DocumentStreamUtils.AddFileToUpload(newVersionRequest, "document", fileDataStream, streamWrapper, token);
-            newVersionRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
-            //DEACTIVATED BY JW 2022-04-05 after upgrade to RestSharp 1.07 ("ReadWriteTimeout -> Not supported", https://restsharp.dev/v107/#reference)
-            //-> TODO: re-activate or find workaround for following line:
-            //newVersionRequest.ReadWriteTimeout = int.MaxValue; // Cannot use Timeout.Infinite here because resthsharp only uses this if > 0
-
-            var result = Execute<NewVersionUploadResponse>(GetOAuthInfo(userId), newVersionRequest);
-            return UnwrapResponse(result, new StatusCodeResponseHandler<NewVersionUploadResponse>(HttpStatusCode.Created));
+            return UploadNewVersionAsync(userId, id, filename, fileDataStream, token).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private string GetMetadata(string filename, System.Func<Stream> fileDataStream)
         {
-            return "{ metadata: { document: {filename: \"" + filename + "\", size: \"" + fileDataStream().Length + "\"} } }";
+            return VersionMetadata(filename, fileDataStream().Length);
         }
         private string GetMetadata(string filename, string fileFullpath)
         {
-            return "{ metadata: { document: {filename: \"" + filename + "\", size: \"" + GetFileSize(fileFullpath) + "\"} } }";
+            return VersionMetadata(filename, GetFileSize(fileFullpath));
+        }
+
+        private static string VersionMetadata(string filename, long length)
+        {
+            return JsonConvert.SerializeObject(new { metadata = new { document = new { filename, size = length.ToString(CultureInfo.InvariantCulture) } } });
         }
 
         public NewVersionUploadResponse RenameDocument(string userId, string id, string filename)
