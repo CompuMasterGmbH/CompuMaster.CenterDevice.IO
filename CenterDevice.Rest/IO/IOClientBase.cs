@@ -7,7 +7,7 @@ namespace CenterDevice.IO
     /// <summary>
     /// IOClient base implementations for high level API access to CenterDevice services
     /// </summary>
-    public abstract class IOClientBase
+    public abstract partial class IOClientBase
     {
         /// <summary>
         /// Create a new instance of IOClientBase

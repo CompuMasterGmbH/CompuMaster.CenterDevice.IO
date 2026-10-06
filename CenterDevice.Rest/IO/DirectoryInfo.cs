@@ -4,7 +4,7 @@ using System.Collections.Generic;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.IO
 {
-    public class DirectoryInfo
+    public partial class DirectoryInfo
     {
         /// <summary>
         /// Create a directory instance representing the root directory
@@ -162,12 +162,20 @@ namespace CenterDevice.IO
 
         public void ResetFilesCache()
         {
-            this.getFiles = null;
+            lock (asynchronousCachePublication)
+            {
+                System.Threading.Interlocked.Increment(ref filesGeneration);
+                this.getFiles = null;
+            }
         }
 
         public void ResetDirectoriesCache()
         {
-            this.getDirectories = null;
+            lock (asynchronousCachePublication)
+            {
+                System.Threading.Interlocked.Increment(ref directoriesGeneration);
+                this.getDirectories = null;
+            }
         }
 
         protected DirectoryInfo[] getDirectories = null;

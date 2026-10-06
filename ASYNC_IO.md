@@ -14,11 +14,19 @@ Mutations are not automatically replayed after timeouts or uncertain server erro
 
 ## Authentication and remaining integration work
 
-Asynchronous authentication implementations can interrupt their own active requests. Legacy synchronous authentication callbacks are serialized on a worker; cancellation can stop waiting, but cannot interrupt an active legacy callback. The synchronous high-level `CenterDevice.IO` facade still needs native composition; the separate Teamwork authorization adapter is being developed against the unpublished dependency sources. This change does not claim that those paths are already fully asynchronous.
+Asynchronous authentication implementations can interrupt their own active requests. Legacy synchronous authentication callbacks are serialized on a worker; cancellation can stop waiting, but cannot interrupt an active legacy callback. The high-level `CenterDevice.IO` facade now has native async directory/file listing, path navigation, streaming file download, upload/version/delete/rename/move, link lookup, and disk-staged file copy. Other directory mutations, principal lookups, sharing operations, and DMS consumption still need native composition; the separate Teamwork authorization adapter is being developed against unpublished dependency sources. This change does not claim that those paths are already fully asynchronous.
 
 `CenterDeviceHttpTransport.CreateHttpClient` allows an external authorization/account client to share this same per-origin policy. Configure its HTTP client before its first request; the caller owns the returned client and inner handler. Existing unrelated transports are not retroactively limited.
 
 Direct CenterDevice authentication is still subject to the limitations of the existing provider. No new support is claimed for previously unsupported server operations.
+
+## High-level cache and copy contracts
+
+Async listings serialize calls per directory, reuse a successful cache, and preserve parent/metadata references. Failed or canceled results are not cached. Resetting a cache during an active async listing prevents that older response from republishing the cache. Concurrent direct synchronous operations on the same directory remain outside this guarantee.
+
+`DirectoryInfo.AddCopyAsync` stages a document on temporary disk using bounded asynchronous copying. It fully consumes and disposes the download before beginning upload so that the single shared origin permit does not deadlock the copy. Its temporary file is removed after success, cancellation, or failure; a cleanup failure is attached to the primary exception's `Data["TemporaryFileCleanupFailure"]` rather than replacing it. It needs sufficient local disk space, has no client-side two-gigabyte array limit, and does not establish actual backend transfer limits. Legacy synchronous `AddCopy` retains its previous memory-buffer limitation.
+
+Async mutations invalidate file caches even after uncertain failures so callers can reconcile state before retrying. Renamed names and moved parent references change only after a successful response. Direct-to-path async downloads preserve the existing overwrite contract: cancellation or failure may leave a partial target, and timestamps update only after success. Simulated 5-GB REST streams and smaller real temporary-disk copy fixtures verify different parts of this implementation; no live 5-GB transfer was performed.
 
 ## Isolated verification
 
@@ -29,6 +37,6 @@ dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --f
 dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --framework net48 -c CI_CD -p:GeneratePackageOnBuild=false
 ```
 
-The current suite passes **24 tests on each framework**, with fake HTTP handlers and clocks. Coverage includes separate-client admission, active request cancellation, unread-response disposal, rate windows, shared Retry-After cooldown, retry budgets, unreplayed writes, native authorization dispatch, a simulated 5-GB download and upload, filename escaping, and stream ownership/error paths. The library builds for `netstandard2.0`, `net6.0` and `net48`. The existing `log4net` package audit warning remains unchanged.
+The current suite passes **35 tests on each framework**, with fake HTTP handlers and clocks. Coverage includes separate-client admission, active request cancellation, unread-response disposal, rate windows, shared Retry-After cooldown, retry budgets, unreplayed writes, native authorization dispatch, a simulated 5-GB download and upload, filename escaping, and stream ownership/error paths. The library builds for `netstandard2.0`, `net6.0` and `net48`. The existing `log4net` package audit warning remains unchanged.
 
 No local remote integration tests were run. The parallelized remote regression in issue #8 remains ignored until its original acceptance criteria are verified with coordinated server access. A green isolated suite does not complete that issue.
