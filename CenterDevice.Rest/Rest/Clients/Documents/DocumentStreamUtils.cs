@@ -10,11 +10,14 @@ namespace CenterDevice.Rest.Clients.Documents
 
         internal static void AddFileToUpload(RestRequest uploadRequest, string fileName, System.Func<Stream> fileDataStream, IStreamWrapper streamWrapper, CancellationToken cancellationToken)
         {
+            // Public REST API 2.29 uploads use streaming multipart framing, also for seekable streams.
+            uploadRequest.AddHeader("Transfer-Encoding", "chunked");
             uploadRequest.AddFile(fileName, () => WrapUploadStream(fileDataStream(), streamWrapper), fileName);
         }
 
         internal static void AddFileToUpload(RestRequest uploadRequest, string fileName, string filePath, IStreamWrapper streamWrapper, CancellationToken cancellationToken)
         {
+            uploadRequest.AddHeader("Transfer-Encoding", "chunked");
             uploadRequest.AddFile(fileName, () => WrapUploadStream(new FileStream(filePath, FileMode.Open, FileAccess.Read,
                 FileShare.Read, DEFAULT_COPY_BUFFER_SIZE, FileOptions.Asynchronous | FileOptions.SequentialScan), streamWrapper), Path.GetFileName(filePath));
         }
