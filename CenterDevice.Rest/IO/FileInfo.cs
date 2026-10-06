@@ -3,7 +3,7 @@
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.IO
 {
-    public class FileInfo
+    public partial class FileInfo
     {
         public FileInfo(CenterDevice.IO.IOClientBase client, CenterDevice.IO.DirectoryInfo parentDirectory, CenterDevice.Rest.Clients.Documents.Metadata.DocumentFullMetadata document)
         {
