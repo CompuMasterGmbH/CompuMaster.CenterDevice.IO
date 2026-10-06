@@ -20,6 +20,21 @@ namespace CenterDevice.Rest.AsyncTests
     public class NativeClientTests
     {
         [Test]
+        public async Task AuthenticatedUserLookupUsesAsyncAuthorizationAndPreservesTheContextIdentity()
+        {
+            var auth = new AsyncAuthorization();
+            var client = new FakeUserClient(auth);
+            using (var cancellation = new CancellationTokenSource())
+            {
+                await client.GetAuthenticatedUserDataAsync("authentication-id", cancellation.Token);
+                Assert.That(auth.AsyncCalls, Is.EqualTo(1));
+                Assert.That(client.Info.UserId, Is.EqualTo("authentication-id"));
+                Assert.That(client.RequestToken, Is.EqualTo(cancellation.Token));
+                Assert.That(client.Request.Resource, Is.EqualTo("v2/user/current"));
+            }
+        }
+
+        [Test]
         public async Task UploadReusesItsLengthProbeAndDisposesTheOwnedStream()
         {
             var stream = new LargeStream();
@@ -150,6 +165,21 @@ namespace CenterDevice.Rest.AsyncTests
             }
             protected override Task<HttpResponseMessage> SendDownloadRequestAsync(HttpRequestMessage request, CancellationToken token)
                 => Task.FromResult(new HttpResponseMessage(DownloadStatus) { Content = DownloadContent });
+        }
+
+        private sealed class FakeUserClient : CenterDevice.Rest.Clients.User.UserRestClient
+        {
+            internal OAuthInfo Info;
+            internal RestRequest Request;
+            internal CancellationToken RequestToken;
+            internal FakeUserClient(IOAuthInfoProvider auth) : base(auth, new Configuration(), null, "v2/") { }
+            protected override Task<RestResponse<T>> ExecuteAsync<T>(OAuthInfo info, RestRequest request, CancellationToken token = default(CancellationToken))
+            {
+                Info = info;
+                Request = request;
+                RequestToken = token;
+                return Task.FromResult(new RestResponse<T>(request) { StatusCode = HttpStatusCode.OK, Data = new T() });
+            }
         }
 
         private sealed class LazyLargeContent : HttpContent

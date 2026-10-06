@@ -10,6 +10,13 @@ namespace CenterDevice.Rest.Clients.User
 {
     public partial class UserRestClient
     {
+        /// <summary>Retrieves the authenticated user's details using the configured authorization provider and native asynchronous I/O.</summary>
+        /// <param name="userId">The authentication-context user identifier.</param>
+        /// <param name="cancellationToken">Cancels authorization, admission, and active HTTP I/O.</param>
+        /// <returns>The authenticated user's details.</returns>
+        public async Task<ExtendedUserData> GetAuthenticatedUserDataAsync(string userId, CancellationToken cancellationToken = default(CancellationToken)) =>
+            await GetLoggedInUserDataAsync(await GetOAuthInfoAsync(userId, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+
         /// <summary>Performs the get logged in user data operation using asynchronous HTTP I/O.</summary>
         /// <param name="oAuthInfo">The o auth info for this operation.</param>
         /// <param name="cancellationToken">Cancels queue admission and active HTTP I/O.</param>

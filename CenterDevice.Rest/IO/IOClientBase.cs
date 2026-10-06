@@ -137,7 +137,7 @@ namespace CenterDevice.IO
             return this.ApiClient.UploadLink.GetLink(this.CurrentAuthenticationContextUserID, linkId);
         }
 
-        private readonly Dictionary<string, string> CachedKnownGroupNames = new Dictionary<string, string>();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CachedKnownGroupNames = new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
         public string GroupName(string groupId)
         {
             if (this.CachedKnownGroupNames.ContainsKey(groupId))
@@ -147,12 +147,12 @@ namespace CenterDevice.IO
             else
             {
                 string Result = this.ApiClient.Group.GetGroup(this.CurrentAuthenticationContextUserID, groupId).Name;
-                this.CachedKnownGroupNames.Add(groupId, Result);
+                this.CachedKnownGroupNames.TryAdd(groupId, Result);
                 return Result;
             }
         }
 
-        private readonly Dictionary<string, string> CachedKnownUserNames = new Dictionary<string, string>();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CachedKnownUserNames = new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
         public string UserName(string userId)
         {
             if (this.CachedKnownUserNames.ContainsKey(userId))
@@ -162,12 +162,12 @@ namespace CenterDevice.IO
             else
             {
                 string Result = this.ApiClient.User.GetUserData(this.CurrentAuthenticationContextUserID, userId).GetFullName();
-                this.CachedKnownUserNames.Add(userId, Result);
+                this.CachedKnownUserNames.TryAdd(userId, Result);
                 return Result;
             }
         }
 
-        private readonly Dictionary<string, string> CachedKnownUserEMailAddresses = new Dictionary<string, string>();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CachedKnownUserEMailAddresses = new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
         public string UserEMailAddress(string userId)
         {
             if (this.CachedKnownUserEMailAddresses.ContainsKey(userId))
@@ -177,7 +177,7 @@ namespace CenterDevice.IO
             else
             {
                 string Result = this.ApiClient.User.GetUserData(this.CurrentAuthenticationContextUserID, userId).Email;
-                this.CachedKnownUserEMailAddresses.Add(userId, Result);
+                this.CachedKnownUserEMailAddresses.TryAdd(userId, Result);
                 return Result;
             }
         }
