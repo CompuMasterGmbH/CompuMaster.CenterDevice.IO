@@ -8,7 +8,7 @@ using System.Net;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Tenant
 {
-    public class TenantSettingsRestClient : CenterDeviceRestClient, ITenantSettingsRestClient
+    public partial class TenantSettingsRestClient : CenterDeviceRestClient, ITenantSettingsRestClient
     {
         private string URI_RESOURCE
         {

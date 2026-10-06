@@ -10,33 +10,19 @@ namespace CenterDevice.Rest.Clients.Documents
 
         internal static void AddFileToUpload(RestRequest uploadRequest, string fileName, System.Func<Stream> fileDataStream, IStreamWrapper streamWrapper, CancellationToken cancellationToken)
         {
-            //WORKAROUND: upload works, but upload cancellation as well as upload speed control not available
-            uploadRequest.AddFile(fileName, fileDataStream, fileName);
+            uploadRequest.AddFile(fileName, () => WrapUploadStream(fileDataStream(), streamWrapper), fileName);
         }
 
         internal static void AddFileToUpload(RestRequest uploadRequest, string fileName, string filePath, IStreamWrapper streamWrapper, CancellationToken cancellationToken)
         {
-            //WORKAROUND: upload works, but upload cancellation as well as upload speed control not available
-            uploadRequest.AddFile(fileName, filePath);
-
-            ////BREAK-DOWN: INTENDED IMPLEMENTATION DOESN'T UPLOAD FILE DATA: Previous CenterDevice implementaion allows cancellationToken / upload abortion
-            //System.Func<Stream> uploadStream = () =>
-            //{
-            //    var result = new System.IO.MemoryStream();
-            //    var fileStream = WrapUploadStream(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete), streamWrapper);
-            //    CopyTo(fileStream, result, cancellationToken);
-            //    return (Stream)result;
-            //};
-            //uploadRequest.AddFile(fileName, uploadStream, Path.GetFileName(filePath));
-
-            ////RestSharp default implementation - for informational purposes only!
-            //FileParameter.FromFile(filePath, fileName);
-            //System.IO.File.OpenRead(filePath);
+            uploadRequest.AddFile(fileName, () => WrapUploadStream(new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                FileShare.Read, DEFAULT_COPY_BUFFER_SIZE, FileOptions.Asynchronous | FileOptions.SequentialScan), streamWrapper), Path.GetFileName(filePath));
         }
 
         internal static Stream WrapUploadStream(Stream stream, IStreamWrapper streamWrapper)
         {
-            return streamWrapper?.WrapUploadStream(stream) ?? stream;
+            try { return streamWrapper?.WrapUploadStream(stream) ?? stream; }
+            catch { stream.Dispose(); throw; }
         }
 
         internal static Stream WrapDownloadStream(Stream stream, IStreamWrapper streamWrapper)

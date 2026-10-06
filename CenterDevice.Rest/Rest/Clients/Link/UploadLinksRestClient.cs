@@ -11,7 +11,7 @@ using System.Net;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Link
 {
-    public class UploadLinksRestClient : CenterDeviceRestClient, IUploadLinksRestClient
+    public partial class UploadLinksRestClient : CenterDeviceRestClient, IUploadLinksRestClient
     {
         private string URI_RESOURCE
         {

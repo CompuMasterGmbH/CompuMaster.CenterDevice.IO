@@ -10,7 +10,7 @@ using System.Net;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Folders
 {
-    public class FolderRestClient : CenterDeviceRestClient, IFolderRestClient
+    public partial class FolderRestClient : CenterDeviceRestClient, IFolderRestClient
     {
         private string URI_RESOURCE
         {

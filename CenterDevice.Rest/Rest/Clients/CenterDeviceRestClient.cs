@@ -6,16 +6,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Globalization;
 
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients
 {
-    public abstract class CenterDeviceRestClient
+    public abstract partial class CenterDeviceRestClient
     {
         protected const string AUTHORIZATION = "Authorization";
         private const string CONTENT_TYPE = "Content-Type";
         private const string BEARER = "Bearer ";
-        private const string PARAMETERS = "Parameters";
 
         private const string UNKNOWN_OR_EXPIRED_TOKEN = "Unknown or expired token";
         private const string EXPIRED_TENANT = "Tenant has expired";
@@ -45,7 +45,8 @@ namespace CenterDevice.Rest.Clients
             this.ApiVersionPrefix = apiVersionPrefix;
             var options = new RestClientOptions(configuration.BaseAddress)
             {
-                UserAgent = configuration.UserAgent
+                UserAgent = configuration.UserAgent,
+                ConfigureMessageHandler = handler => new CenterDeviceHttpMessageHandler(handler)
             };
             client = new RestClient(options);
 
@@ -69,16 +70,12 @@ namespace CenterDevice.Rest.Clients
 
         protected virtual RestResponse Execute(OAuthInfo oAuthInfo, RestRequest request)
         {
-            PrepareRequest(oAuthInfo, request);
-
-            return HandleResponseSync(oAuthInfo, request, client.ExecuteAsync(request).Result);
+            return ExecuteAsync(oAuthInfo, request).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         protected virtual RestResponse<T> Execute<T>(OAuthInfo oAuthInfo, RestRequest request) where T : new()
         {
-            PrepareRequest(oAuthInfo, request);
-
-            return HandleResponseSync(oAuthInfo, request, client.ExecuteAsync<T>(request).Result);
+            return ExecuteAsync<T>(oAuthInfo, request).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private void PrepareRequest(OAuthInfo oAuthInfo, RestRequest request)
@@ -90,92 +87,21 @@ namespace CenterDevice.Rest.Clients
 
         protected TimeSpan? ExtractDelay(RestResponse result)
         {
-            return ExtractDelay((string)result.Headers.FirstOrDefault(parameter => parameter.Name.Equals(RETRY_AFTER, StringComparison.OrdinalIgnoreCase))?.Value);
+            return ExtractDelay(result.Headers?.FirstOrDefault(parameter => string.Equals(parameter.Name, RETRY_AFTER, StringComparison.OrdinalIgnoreCase))?.Value?.ToString());
         }
 
         protected TimeSpan? ExtractDelay(string value)
         {
-            try
-            {
-                if (value != null)
-                {
-                    return TimeSpan.FromSeconds(int.Parse(value));
-                }
-            }
-            catch (Exception)
-            {
-                // Nothing to do
-            }
+            if (long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) && seconds >= 0)
+                return TimeSpan.FromSeconds(Math.Min(seconds, TimeSpan.MaxValue.TotalSeconds - 1));
+            if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var date))
+                return date > DateTimeOffset.UtcNow ? date - DateTimeOffset.UtcNow : TimeSpan.Zero;
             return null;
         }
 
         private bool IsRateLimitExceeded(RestResponse result)
         {
             return (int)result.StatusCode == TOO_MANY_REQUESTS;
-        }
-
-        private RestResponse<T> HandleResponseSync<T>(OAuthInfo oAuthInfo, RestRequest request, RestResponse<T> result) where T : new()
-        {
-            if (IsExpiredToken(result))
-            {
-                var refreshOAuthInfo = errorHandler?.RefreshToken(oAuthInfo);
-                if (refreshOAuthInfo == null)
-                {
-                    return result;
-                }
-
-                SwapAuthorizationHeader(refreshOAuthInfo, request);
-
-                return client.ExecuteAsync<T>(request).Result;
-            }
-            else if (IsRateLimitExceeded(result))
-            {
-                throw new TooManyRequestsException(ExtractDelay(result));
-            }
-            else if (IsNotConnected(result))
-            {
-                throw new NotConnectedException(result.ErrorMessage, result.ErrorException);
-            }
-            else if (IsOperationTimedOut(result))
-            {
-                throw new OperationTimedOutException(result.ErrorMessage, result.ErrorException);
-            }
-            else
-            {
-                return result;
-            }
-        }
-
-        private RestResponse HandleResponseSync(OAuthInfo oAuthInfo, RestRequest request, RestResponse result)
-        {
-            if (IsExpiredToken(result))
-            {
-                var refreshOAuthInfo = errorHandler?.RefreshToken(oAuthInfo);
-                if (refreshOAuthInfo == null)
-                {
-                    return result;
-                }
-
-                SwapAuthorizationHeader(refreshOAuthInfo, request);
-
-                return client.ExecuteAsync(request).Result;
-            }
-            else if (IsRateLimitExceeded(result))
-            {
-                throw new TooManyRequestsException(ExtractDelay(result));
-            }
-            else if (IsNotConnected(result))
-            {
-                throw new NotConnectedException(result.ErrorMessage, result.ErrorException);
-            }
-            else if (IsOperationTimedOut(result))
-            {
-                throw new OperationTimedOutException(result.ErrorMessage, result.ErrorException);
-            }
-            else
-            {
-                return result;
-            }
         }
 
         private bool IsNotConnected(RestResponse result)
@@ -246,14 +172,7 @@ namespace CenterDevice.Rest.Clients
 
         private void SwapAuthorizationHeader(OAuthInfo newOAuthInfo, RestRequest request)
         {
-            RemoveAuthorizationHeader(request);
-            AddAuthorizationHeader(newOAuthInfo, request);
-        }
-
-        private void RemoveAuthorizationHeader(RestRequest request)
-        {
-            ((List<Parameter>)((RestRequest)request).GetType().GetProperty(PARAMETERS).GetValue(request))
-                .RemoveAll(parameter => parameter.Name == AUTHORIZATION);
+            request.AddOrUpdateHeader(AUTHORIZATION, GetAuthorizationBearer(newOAuthInfo));
         }
 
         private bool IsExpiredToken(RestResponse result)

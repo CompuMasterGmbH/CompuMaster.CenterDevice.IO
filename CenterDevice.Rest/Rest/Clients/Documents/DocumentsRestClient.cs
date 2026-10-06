@@ -16,7 +16,7 @@ using System.Threading;
 #pragma warning disable CS1591 // Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 namespace CenterDevice.Rest.Clients.Documents
 {
-    public class DocumentsRestClient : CenterDeviceRestClient, IDocumentsRestClient
+    public partial class DocumentsRestClient : CenterDeviceRestClient, IDocumentsRestClient
     {
         public const int MAX_DOCUMENT_ROWS = 500;
 
@@ -119,44 +119,22 @@ namespace CenterDevice.Rest.Clients.Documents
 
         public UploadDocumentResponse UploadDocument(string userId, string filename, string path, string collectionId, string parentId, CancellationToken cancellationToken)
         {
-            return UploadDocument(userId, filename, path, null, new List<string>() { collectionId }, new List<string>() { parentId }, cancellationToken);
+            return UploadDocumentAsync(userId, filename, path, collectionId, parentId, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public UploadDocumentResponse UploadDocument(string userId, string filename, System.Func<Stream> fileStreamData, string collectionId, string parentId, CancellationToken cancellationToken)
         {
-            return UploadDocument(userId, filename, fileStreamData, null, new List<string>() { collectionId }, new List<string>() { parentId }, cancellationToken);
+            return UploadDocumentAsync(userId, filename, fileStreamData, collectionId, parentId, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public UploadDocumentResponse UploadDocument(string userId, string filename, string path, DateTime? documentDate, List<string> collectionIds, List<string> folderIds, CancellationToken cancellationToken)
         {
-            RestRequest uploadRequest = CreateRestRequest(URI_RESOURCE, Method.Post, ContentType.MULTIPART_FORM_DATA);
-            uploadRequest.AlwaysMultipartFormData = true;
-            //uploadRequest.AddParameter(JsonParameter.CreateParameter(RestApiConstants.METADATA, GenerateDocumentUploadJson(filename, path, documentDate, collectionIds, folderIds), ParameterType.RequestBody));
-            uploadRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GenerateDocumentUploadJson(filename, path, documentDate, collectionIds, folderIds), "application/json"));
-            DocumentStreamUtils.AddFileToUpload(uploadRequest, RestApiConstants.DOCUMENT, path, streamWrapper, cancellationToken);
-            uploadRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
-            //DEACTIVATED BY JW 2022-04-05 after upgrade to RestSharp 1.07 ("ReadWriteTimeout -> Not supported", https://restsharp.dev/v107/#reference)
-            //-> TODO: re-activate or find workaround for following line:
-            //uploadRequest.ReadWriteTimeout = int.MaxValue; // Cannot use Timeout.Infinite here because resthsharp only uses this if > 0
-
-            var result = Execute<UploadDocumentResponse>(GetOAuthInfo(userId), uploadRequest);
-            return UnwrapResponse(result, new StatusCodeResponseHandler<UploadDocumentResponse>(HttpStatusCode.Created));
+            return UploadDocumentAsync(userId, filename, path, documentDate, collectionIds, folderIds, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public UploadDocumentResponse UploadDocument(string userId, string filename, System.Func<Stream> fileStreamData, DateTime? documentDate, List<string> collectionIds, List<string> folderIds, CancellationToken cancellationToken)
         {
-            RestRequest uploadRequest = CreateRestRequest(URI_RESOURCE, Method.Post, ContentType.MULTIPART_FORM_DATA);
-            uploadRequest.AlwaysMultipartFormData = true;
-            //uploadRequest.AddParameter(JsonParameter.CreateParameter(RestApiConstants.METADATA, GenerateDocumentUploadJson(filename, path, documentDate, collectionIds, folderIds), ParameterType.RequestBody));
-            uploadRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GenerateDocumentUploadJson(filename, fileStreamData, documentDate, collectionIds, folderIds), "application/json"));
-            DocumentStreamUtils.AddFileToUpload(uploadRequest, RestApiConstants.DOCUMENT, fileStreamData, streamWrapper, cancellationToken);
-            uploadRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
-            //DEACTIVATED BY JW 2022-04-05 after upgrade to RestSharp 1.07 ("ReadWriteTimeout -> Not supported", https://restsharp.dev/v107/#reference)
-            //-> TODO: re-activate or find workaround for following line:
-            //uploadRequest.ReadWriteTimeout = int.MaxValue; // Cannot use Timeout.Infinite here because resthsharp only uses this if > 0
-
-            var result = Execute<UploadDocumentResponse>(GetOAuthInfo(userId), uploadRequest);
-            return UnwrapResponse(result, new StatusCodeResponseHandler<UploadDocumentResponse>(HttpStatusCode.Created));
+            return UploadDocumentAsync(userId, filename, fileStreamData, documentDate, collectionIds, folderIds, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public DeleteDocumentsResponse DeleteDocuments(string userId, List<string> ids)
