@@ -7,7 +7,7 @@
 		<Version>2024.11.04.100</Version>
 		<Authors>Jochen Wezel</Authors>
 		<Company>CompuMaster GmbH</Company>
-		<Copyright>2019-2024 CompuMaster GmbH</Copyright>
+		<Copyright>2019-2026 CompuMaster GmbH</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>Client access library for the Teamwork part of OpenScope API https://www.openscope.de/ (REST web API interface provided by Scopevisio AG, https://www.scopevisio.com/), library generated from Swagger/OpenAPI doc at https://appload.scopevisio.com/rest/swagger.json</Description>
 		<PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Scopevisio.Teamwork</PackageProjectUrl>
