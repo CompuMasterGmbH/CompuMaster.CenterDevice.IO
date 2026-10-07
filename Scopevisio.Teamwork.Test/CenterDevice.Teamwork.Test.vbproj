@@ -5,7 +5,7 @@
     <TargetFrameworks>netcoreapp3.1;net8.0;net48</TargetFrameworks>
     <Authors>Jochen Wezel</Authors>
     <Company>CompuMaster GmbH</Company>
-    <Copyright>2019-2024 CompuMaster GmbH</Copyright>
+    <Copyright>2019-2026 CompuMaster GmbH</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <OutputType>Library</OutputType>
     <StartupObject />

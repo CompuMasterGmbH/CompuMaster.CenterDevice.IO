@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net48</TargetFrameworks>
     <AssemblyName>CompuMaster.CenterDevice.Rest</AssemblyName>
-    <Version>2026.01.02.100</Version>
+    <Version>2026.10.07.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.CenterDevice.IO</PackageProjectUrl>
     <Copyright>Copyright © 2017-2026 CenterDevice GmbH, Bonn/Germany and CompuMaster GmbH, Emmelshausen/Germany</Copyright>

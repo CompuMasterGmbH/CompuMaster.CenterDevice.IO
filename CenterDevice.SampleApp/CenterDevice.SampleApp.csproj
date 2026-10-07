@@ -13,7 +13,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyTitle>CenterDevice.SampleApp</AssemblyTitle>
     <Product>CenterDevice.SampleApp</Product>
-    <Copyright>Copyright © 2020-2024 CompuMaster GmbH</Copyright>
+    <Copyright>Copyright © 2020-2026 CompuMaster GmbH</Copyright>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
   <ItemGroup>
