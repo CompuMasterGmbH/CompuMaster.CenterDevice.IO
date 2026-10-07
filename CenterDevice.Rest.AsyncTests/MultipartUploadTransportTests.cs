@@ -64,7 +64,7 @@ namespace CenterDevice.Rest.AsyncTests
         {
             Assert.That(transport.Calls, Is.EqualTo(1), "An upload must not replay a write.");
             Assert.That(transport.MediaType, Is.EqualTo("multipart/form-data"));
-            Assert.That(transport.PartNames, Is.EquivalentTo(new[] { "metadata", "document" }));
+            Assert.That(transport.PartNames, Is.EqualTo(new[] { "metadata", "document" }), "The documented upload sends metadata before streamed document bytes.");
             Assert.That(transport.Document, Is.EqualTo(payload));
             Assert.That(transport.Metadata, Does.Contain("fixture.bin"));
             // Public REST API 2.29, section 5.2.1: multipart upload request uses chunked transfer.

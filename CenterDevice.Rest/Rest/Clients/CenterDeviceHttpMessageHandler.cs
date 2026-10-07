@@ -53,7 +53,14 @@ namespace CenterDevice.Rest.Clients
                         retryRequest = new HttpRequestMessage(request.Method, request.RequestUri) { Version = request.Version };
                         foreach (var header in request.Headers) retryRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
                     }
-                    response = await base.SendAsync(retryRequest ?? request, cancellationToken).ConfigureAwait(false);
+                    var sending = retryRequest ?? request;
+                    var originalContent = sending.Content;
+                    using (var ordered = MetadataFirstMultipartContent.CreateIfNeeded(sending))
+                    {
+                        if (ordered != null) sending.Content = ordered;
+                        try { response = await base.SendAsync(sending, cancellationToken).ConfigureAwait(false); }
+                        finally { if (ordered != null) sending.Content = originalContent; }
+                    }
                     if ((int)response.StatusCode == 429 || response.StatusCode == HttpStatusCode.ServiceUnavailable)
                     {
                         var after = response.Headers.RetryAfter;
