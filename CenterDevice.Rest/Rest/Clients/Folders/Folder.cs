@@ -33,7 +33,7 @@ namespace CenterDevice.Rest.Clients.Folders
             }
         }
 
-        public List<Rest.Clients.Documents.Metadata.DocumentFullMetadata> Documents;
+        public List<CenterDevice.Rest.Clients.Documents.Metadata.DocumentFullMetadata> Documents;
 
         public string Link { get; set; }
 

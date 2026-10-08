@@ -5,6 +5,10 @@ namespace CenterDevice.IO
 {
     public class CenterDeviceIOClient : IOClientBase
     {
+        public CenterDeviceIOClient(CenterDevice.Rest.Clients.CenterDeviceClient centerDeviceClient) : this(centerDeviceClient, centerDeviceClient.Token.UserId)
+        {
+        }
+
         public CenterDeviceIOClient(CenterDevice.Rest.Clients.CenterDeviceClient centerDeviceClient, string userID) : base(centerDeviceClient, userID)
         {
             this.centerDeviceClient = centerDeviceClient;
