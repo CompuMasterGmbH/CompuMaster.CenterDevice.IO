@@ -68,6 +68,37 @@ namespace CenterDevice.Rest.AsyncTests
             Assert.That(calls, Is.Zero);
         }
 
+        [TestCase(false, false), TestCase(true, false), TestCase(false, true), TestCase(true, true)]
+        public async Task ExplicitVersionDateIsUtcAndLegacyUploadsOmitIt(bool fromDisk, bool withDate)
+        {
+            var date = new DateTime(2024, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+            var client = new FakeDocumentClient(new AsyncAuthorization());
+            var path = Path.Combine(TestContext.CurrentContext.WorkDirectory, "upload-date-" + Guid.NewGuid().ToString("N"));
+            Assert.That(File.Exists(path), Is.False);
+            try
+            {
+                File.WriteAllBytes(path, new byte[] { 1, 2, 3 });
+                if (fromDisk)
+                {
+                    if (withDate) await client.UploadNewVersionAsync("user", "id", "file", path, date.ToLocalTime(), CancellationToken.None);
+                    else await client.UploadNewVersionAsync("user", "id", "file", path, CancellationToken.None);
+                }
+                else
+                {
+                    Func<Stream> factory = () => new MemoryStream(new byte[] { 1, 2, 3 });
+                    if (withDate) await client.UploadNewVersionAsync("user", "id", "file", factory, DateTime.SpecifyKind(date, DateTimeKind.Unspecified), CancellationToken.None);
+                    else await client.UploadNewVersionAsync("user", "id", "file", factory, CancellationToken.None);
+                }
+                var document = JObject.Parse(client.Request.Parameters.First(p => p.Name == "metadata").Value.ToString())["metadata"]["document"];
+                Assert.That(document["document-date"] != null, Is.EqualTo(withDate));
+                if (withDate) Assert.That(document["document-date"].Value<DateTime>().ToUniversalTime(), Is.EqualTo(date));
+                Assert.That(document["size"].Value<long>(), Is.EqualTo(3));
+                Assert.That(client.Request.Resource, Is.EqualTo("v2/document/id"));
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+            Assert.That(File.Exists(path), Is.False);
+        }
+
         [Test]
         public async Task MetadataUsesAsyncAuthorizationAndForwardsTheRequestToken()
         {
@@ -81,6 +112,24 @@ namespace CenterDevice.Rest.AsyncTests
                 Assert.That(client.Request.Resource, Is.EqualTo("v2/document/document"));
                 Assert.That(client.Request.Method, Is.EqualTo(Method.Get));
             }
+        }
+
+        [TestCase(false), TestCase(true)]
+        public async Task NewDocumentMetadataPreservesDateAndDestinationActions(bool withDate)
+        {
+            var client = new FakeDocumentsClient(new AsyncAuthorization());
+            var date = new DateTime(2024, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+            var source = new LargeStream();
+            int opens = 0;
+            await client.UploadDocumentAsync("user", "file", () => { opens++; return source; }, withDate ? (DateTime?)date : null,
+                new System.Collections.Generic.List<string> { "collection" }, new System.Collections.Generic.List<string> { "folder" }, CancellationToken.None);
+            var metadata = JObject.Parse(client.Request.Parameters.First(p => p.Name == "metadata").Value.ToString())["metadata"];
+            Assert.That(metadata["document"]["document-date"] != null, Is.EqualTo(withDate));
+            if (withDate) Assert.That(metadata["document"]["document-date"].Value<DateTime>().ToUniversalTime(), Is.EqualTo(date));
+            Assert.That(metadata["actions"]["add-to-collection"].Values<string>().Single(), Is.EqualTo("collection"));
+            Assert.That(metadata["actions"]["add-to-folder"].Values<string>().Single(), Is.EqualTo("folder"));
+            Assert.That(opens, Is.EqualTo(1));
+            Assert.That(source.Disposals, Is.EqualTo(1));
         }
 
         [Test]
@@ -179,6 +228,18 @@ namespace CenterDevice.Rest.AsyncTests
                 Request = request;
                 RequestToken = token;
                 return Task.FromResult(new RestResponse<T>(request) { StatusCode = HttpStatusCode.OK, Data = new T() });
+            }
+        }
+
+        private sealed class FakeDocumentsClient : DocumentsRestClient
+        {
+            internal RestRequest Request;
+            internal FakeDocumentsClient(IOAuthInfoProvider auth) : base(auth, new Configuration(), null, null, "v2/") { }
+            protected override Task<RestResponse<T>> ExecuteAsync<T>(OAuthInfo info, RestRequest request, CancellationToken token = default(CancellationToken))
+            {
+                Request = request;
+                using (var body = request.Files.Single().GetFile()) body.Read(new byte[16], 0, 16);
+                return Task.FromResult(new RestResponse<T>(request) { StatusCode = HttpStatusCode.Created, Data = new T() });
             }
         }
 
