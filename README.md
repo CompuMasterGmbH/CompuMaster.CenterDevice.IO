@@ -20,6 +20,16 @@ Track each upstream change in an issue in its owning repository, link its implem
 
 Shared remote test systems require coordinated exclusive access across repositories and local sessions, including setup and cleanup. Identically named GitHub Actions concurrency groups in different repositories do not provide a shared lock. See [AGENTS.md](AGENTS.md) for working rules.
 
+## Explicit upload dates
+
+Timestamp-aware overloads of `DirectoryInfo.UploadAndCreateNewFileAsync` and
+`FileInfo.UploadNewVersionAsync` accept a source modification date as the remote
+`document-date`. Local dates are converted to UTC; dates without a time-zone kind
+are interpreted as UTC. Matching synchronous local-file overloads are available.
+The REST new-version API also accepts an explicit date. Existing overloads retain
+their server-default date behavior, and `null` does not add a date to the metadata.
+These dates describe the document; they do not replace server audit timestamps.
+
 ## Frameworks supported
 
 * .NET 5.0 or later

@@ -57,12 +57,23 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="filepath">The filepath for this operation.</param>
         /// <param name="token">Cancels queue admission and active HTTP I/O.</param>
         /// <returns>A task representing the operation and its result.</returns>
-        public async Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, string filepath, CancellationToken token)
+        public Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, string filepath, CancellationToken token)
+            => UploadNewVersionAsync(userId, id, filename, filepath, null, token);
+
+        /// <summary>Uploads a new version with an explicit document date.</summary>
+        /// <param name="userId">The authenticated user identifier.</param>
+        /// <param name="id">The existing document identifier.</param>
+        /// <param name="filename">The document filename.</param>
+        /// <param name="filepath">The local source path.</param>
+        /// <param name="documentDate">The document date; local times are converted to UTC, unspecified times are treated as UTC, and null preserves the server default.</param>
+        /// <param name="token">Cancels admission and active HTTP I/O.</param>
+        /// <returns>The server-confirmed new version.</returns>
+        public async Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, string filepath, DateTime? documentDate, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             RestRequest newVersionRequest = CreateRestRequest(URI_RESOURCE + id, Method.Post, ContentType.MULTIPART_FORM_DATA);
             newVersionRequest.AlwaysMultipartFormData = true;
-            newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GetMetadata(filename, filepath), "application/json"));
+            newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, DatedVersionMetadata(filename, new System.IO.FileInfo(filepath).Length, documentDate), "application/json"));
             DocumentStreamUtils.AddFileToUpload(newVersionRequest, "document", filepath, streamWrapper, token);
             newVersionRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
 
@@ -77,14 +88,25 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="fileDataStream">The file data stream for this operation.</param>
         /// <param name="token">Cancels queue admission and active HTTP I/O.</param>
         /// <returns>A task representing the operation and its result.</returns>
-        public async Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, System.Func<Stream> fileDataStream, CancellationToken token)
+        public Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, System.Func<Stream> fileDataStream, CancellationToken token)
+            => UploadNewVersionAsync(userId, id, filename, fileDataStream, null, token);
+
+        /// <summary>Uploads streamed content as a new version with an explicit document date.</summary>
+        /// <param name="userId">The authenticated user identifier.</param>
+        /// <param name="id">The existing document identifier.</param>
+        /// <param name="filename">The document filename.</param>
+        /// <param name="fileDataStream">Creates a readable stream with an available length; the SDK owns the stream.</param>
+        /// <param name="documentDate">The document date; local times are converted to UTC, unspecified times are treated as UTC, and null preserves the server default.</param>
+        /// <param name="token">Cancels admission and active HTTP I/O.</param>
+        /// <returns>The server-confirmed new version.</returns>
+        public async Task<NewVersionUploadResponse> UploadNewVersionAsync(string userId, string id, string filename, System.Func<Stream> fileDataStream, DateTime? documentDate, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             using (var upload = new UploadStreamSource(fileDataStream))
             {
                 RestRequest newVersionRequest = CreateRestRequest(URI_RESOURCE + id, Method.Post, ContentType.MULTIPART_FORM_DATA);
                 newVersionRequest.AlwaysMultipartFormData = true;
-                newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, GetMetadata(filename, () => upload.MetadataStream), "application/json"));
+                newVersionRequest.AddParameter(new BodyParameter(RestApiConstants.METADATA, DatedVersionMetadata(filename, upload.MetadataStream.Length, documentDate), "application/json"));
                 DocumentStreamUtils.AddFileToUpload(newVersionRequest, "document", upload.Open, streamWrapper, token);
                 newVersionRequest.Timeout = new TimeSpan(0, 0, 0, 0, int.MaxValue);
 
