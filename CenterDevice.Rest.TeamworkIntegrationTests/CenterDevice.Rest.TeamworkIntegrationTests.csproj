@@ -11,4 +11,7 @@
     <PackageReference Include="CompuMaster.Scopevisio.OpenApi" Version="2026.10.7" />
     <ProjectReference Include="../CenterDevice.Rest/CenterDevice.Rest.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
 </Project>

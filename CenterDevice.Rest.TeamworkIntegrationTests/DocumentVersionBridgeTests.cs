@@ -14,8 +14,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -40,6 +42,14 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         [TestCase(false), TestCase(true)]
         [Explicit("Requires coordinated exclusive access across local sessions and CI until verified cleanup.")]
         public async Task RevertAndRemoveVersionsThroughTeamwork(bool synchronous)
+            => await RunWithOwnedCollection(synchronous, false);
+
+        [TestCase(false), TestCase(true)]
+        [Explicit("Requires coordinated exclusive access across local sessions and CI until verified cleanup.")]
+        public async Task DownloadRepresentationsThroughTeamwork(bool synchronous)
+            => await RunWithOwnedCollection(synchronous, true);
+
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -76,8 +86,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     ledger.Id = (await client.Collections.CreateCollectionAsync(contextId, ledger.Name, timeout.Token)).Id;
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
-                    phase = synchronous ? "sync version commands" : "async version commands";
-                    await VerifyVersions(synchronous, timeout.Token);
+                    phase = synchronous ? "sync document operations" : "async document operations";
+                    if (representations) await VerifyRepresentations(synchronous, timeout.Token);
+                    else await VerifyVersions(synchronous, timeout.Token);
                 }
                 catch (Exception error) { originalFailure = error; }
                 finally
@@ -95,7 +106,168 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 // Retain both exceptions in memory; report separate sanitized diagnostics.
                 if (originalFailure != null || cleanupFailure != null)
                     Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup: " + Diagnostic(cleanupFailure));
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + ": identity, payload/history, repeat revert, current-version removal, non-reused numbers, delete-all rejection, cancellation and complete cleanup verified.");
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (representations
+                    ? ": selected historical/current fulltext and ZIP contents verified; PDF/preview/unsupported MP4 outcomes recorded; cancellation and complete cleanup verified."
+                    : ": identity, payload/history, repeat revert, current-version removal, non-reused numbers, delete-all rejection, cancellation and complete cleanup verified."));
+            }
+        }
+
+        private async Task VerifyRepresentations(bool sync, CancellationToken token)
+        {
+            ledger.Filename = "representations-" + Guid.NewGuid().ToString("N") + ".txt";
+            SaveLedger();
+            CheckLease();
+            var upload = await client.Documents.UploadDocumentAsync(contextId, ledger.Filename, () => Payload("Original fulltext"), null,
+                new List<string> { ledger.Id }, null, token);
+            ledger.Documents.Add(upload.Id);
+            SaveLedger();
+            var doc = await client.Document.GetDocumentMetadataAsync(contextId, upload.Id, token);
+            Check(doc.Owner == ownerId && doc.Filename == ledger.Filename, "Uploaded document ownership/identity must agree.");
+            await client.Document.UploadNewVersionAsync(contextId, doc.Id, ledger.Filename, () => Payload("Current fulltext"), token);
+            phase = "historical and current fulltext";
+            foreach (var historical in new[] { true, false })
+            {
+                CheckLease();
+                long? version = historical ? (long?)doc.Version : null;
+                using (var stream = sync ? client.Document.DownloadFulltext(contextId, doc.Id, version, 30, token)
+                    : await client.Document.DownloadFulltextAsync(contextId, doc.Id, version, 30, token))
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    Check(await reader.ReadToEndAsync() == (historical ? "Original fulltext" : "Current fulltext"),
+                        "Fulltext must bind the requested historical/current document version.");
+            }
+            phase = "PDF representation";
+            CheckLease();
+            // Supply an actual PDF, instead of assuming this tenant converts plain text into PDF.
+            ledger.Filename = "representations-" + Guid.NewGuid().ToString("N") + ".pdf";
+            SaveLedger();
+            await client.Document.UploadNewVersionAsync(contextId, doc.Id, ledger.Filename, PdfPayload, token);
+            var pdfReady = false;
+            try
+            {
+                using (var stream = sync ? client.Document.DownloadPdf(contextId, doc.Id, waitForGenerationSeconds: 30, cancellationToken: token)
+                    : await client.Document.DownloadPdfAsync(contextId, doc.Id, waitForGenerationSeconds: 30, cancellationToken: token))
+                {
+                    var signature = new byte[5];
+                    var count = 0;
+                    while (count < signature.Length)
+                    {
+                        var read = await stream.ReadAsync(signature, count, signature.Length - count, token);
+                        if (read == 0) break;
+                        count += read;
+                    }
+                    Check(Encoding.ASCII.GetString(signature) == "%PDF-", "A ready PDF representation must contain PDF bytes.");
+                }
+                pdfReady = true;
+                TestContext.Out.WriteLine("PDF representation outcome: ready with verified PDF signature.");
+            }
+            catch (DocumentRepresentationNotReadyException error)
+            { TestContext.Out.WriteLine("PDF representation outcome: pending generation, status " + (int)error.StatusCode + "."); }
+            catch (NotAcceptableException)
+            { TestContext.Out.WriteLine("PDF representation outcome: unsupported by this tenant."); }
+            phase = "unsupported MP4";
+            CheckLease();
+            var unsupported = false;
+            try
+            {
+                using (sync ? client.Document.DownloadMp4(contextId, doc.Id, cancellationToken: token)
+                    : await client.Document.DownloadMp4Async(contextId, doc.Id, cancellationToken: token)) { }
+            }
+            catch (NotAcceptableException) { unsupported = true; }
+            Check(unsupported, "Unsupported PDF-to-MP4 conversion must not be returned as successful representation data.");
+            phase = "original and PDF ZIP downloads";
+            foreach (var streaming in new[] { false, true })
+            {
+                CheckLease();
+                using (var source = sync ? client.Documents.DownloadDocumentsAsZip(contextId, new[] { doc.Id }, stream: streaming, cancellationToken: token)
+                    : await client.Documents.DownloadDocumentsAsZipAsync(contextId, new[] { doc.Id }, stream: streaming, cancellationToken: token))
+                    await CheckZip(source, ledger.Filename, token);
+            }
+            if (pdfReady)
+            {
+                CheckLease();
+                using (var source = sync ? client.Documents.DownloadDocumentsAsZip(contextId, new[] { doc.Id },
+                    CenterDevice.Rest.Clients.Documents.DocumentDownloadRepresentation.Pdf, cancellationToken: token)
+                    : await client.Documents.DownloadDocumentsAsZipAsync(contextId, new[] { doc.Id },
+                    CenterDevice.Rest.Clients.Documents.DocumentDownloadRepresentation.Pdf, cancellationToken: token))
+                    await CheckZip(source, ledger.Filename, token);
+            }
+            phase = "preview pages";
+            CheckLease();
+            try
+            {
+                using (var preview = sync ? client.Document.DownloadPreviews(contextId, doc.Id, CenterDevice.Rest.Clients.Documents.PreviewSize._240,
+                    waitForGenerationSeconds: 30, includeErrorInfo: true, cancellationToken: token)
+                    : await client.Document.DownloadPreviewsAsync(contextId, doc.Id, CenterDevice.Rest.Clients.Documents.PreviewSize._240,
+                    waitForGenerationSeconds: 30, includeErrorInfo: true, cancellationToken: token))
+                    Check(preview.Content.ReadByte() >= 0, "A ready page preview must contain image bytes.");
+                TestContext.Out.WriteLine("Preview outcome: ready with negotiated image MIME and nonempty body.");
+                CheckLease();
+                using (var previews = sync ? client.Document.DownloadPreviews(contextId, doc.Id, CenterDevice.Rest.Clients.Documents.PreviewSize._240,
+                    "all", waitForGenerationSeconds: 30, cancellationToken: token)
+                    : await client.Document.DownloadPreviewsAsync(contextId, doc.Id, CenterDevice.Rest.Clients.Documents.PreviewSize._240,
+                    "all", waitForGenerationSeconds: 30, cancellationToken: token))
+                using (var reader = new StreamReader(previews.Content, Encoding.UTF8))
+                {
+                    var parts = await reader.ReadToEndAsync();
+                    Check(previews.ContentType.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase), "All-pages preview must retain multipart MIME metadata.");
+                    Check(parts.Contains("name=\"1\"") || parts.Contains("name=1"), "The actual preview part must retain its one-based page identity.");
+                }
+                TestContext.Out.WriteLine("Multipart preview outcome: ready with boundary and actual page-1 part.");
+            }
+            catch (DocumentRepresentationNotReadyException error)
+            { TestContext.Out.WriteLine("Preview outcome: pending generation, status " + (int)error.StatusCode + "."); }
+            using (var canceled = new CancellationTokenSource())
+            {
+                canceled.Cancel();
+                await ExpectCanceled(() => client.Document.DownloadFulltextAsync(contextId, doc.Id, cancellationToken: canceled.Token));
+            }
+            phase = "active fulltext cancellation";
+            CheckLease();
+            using (var canceled = CancellationTokenSource.CreateLinkedTokenSource(token))
+            using (var source = sync ? client.Document.DownloadFulltext(contextId, doc.Id, doc.Version, cancellationToken: canceled.Token)
+                : await client.Document.DownloadFulltextAsync(contextId, doc.Id, doc.Version, cancellationToken: canceled.Token))
+            {
+                canceled.Cancel();
+                await ExpectCanceled(async () => { await source.ReadAsync(new byte[1], 0, 1); });
+            }
+        }
+
+        private static MemoryStream PdfPayload()
+        {
+            var content = "BT /F1 12 Tf 20 100 Td (CenterDevice test PDF) Tj ET\n";
+            var objects = new[] { "<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+                "<< /Length " + Encoding.ASCII.GetByteCount(content) + " >>\nstream\n" + content + "endstream" };
+            var text = new StringBuilder("%PDF-1.4\n");
+            var offsets = new List<int>();
+            for (int i = 0; i < objects.Length; i++)
+            {
+                offsets.Add(Encoding.ASCII.GetByteCount(text.ToString()));
+                text.Append((i + 1).ToString(CultureInfo.InvariantCulture)).Append(" 0 obj\n").Append(objects[i]).Append("\nendobj\n");
+            }
+            var xref = Encoding.ASCII.GetByteCount(text.ToString());
+            text.Append("xref\n0 6\n0000000000 65535 f \n");
+            foreach (var offset in offsets) text.Append(offset.ToString("D10", CultureInfo.InvariantCulture)).Append(" 00000 n \n");
+            text.Append("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n").Append(xref.ToString(CultureInfo.InvariantCulture)).Append("\n%%EOF\n");
+            return new MemoryStream(Encoding.ASCII.GetBytes(text.ToString()), false);
+        }
+
+        private static async Task CheckZip(Stream source, string filename, CancellationToken token)
+        {
+            using (var bytes = new MemoryStream())
+            {
+                await source.CopyToAsync(bytes, 81920, token); // Only this tiny owned fixture is buffered for archive inspection.
+                bytes.Position = 0;
+                using (var zip = new ZipArchive(bytes, ZipArchiveMode.Read, true))
+                {
+                    Check(zip.Entries.Count == 1, "ZIP must contain exactly the selected visible test document.");
+                    var entry = zip.Entries[0];
+                    Check(entry.Name == filename, "ZIP must retain the selected file's current name.");
+                    using (var body = entry.Open())
+                    using (var reader = new StreamReader(body, Encoding.ASCII))
+                        Check((await reader.ReadToEndAsync()).StartsWith("%PDF-", StringComparison.Ordinal), "ZIP content must match the current PDF document.");
+                }
             }
         }
 
@@ -293,6 +465,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         {
             if (error == null) return "none";
             if (error is VerificationFailure) return error.Message;
+            if (error is InvalidResponseDataException && error.InnerException is InvalidDataException invalid)
+            {
+                var media = System.Text.RegularExpressions.Regex.Match(invalid.Message, @"received ([a-zA-Z0-9!#$&^_.+-]+/[a-zA-Z0-9!#$&^_.+-]+)");
+                if (media.Success) return "InvalidResponseDataException (media type " + media.Groups[1].Value + ")";
+            }
             return error.GetType().Name + (error is RestClientException rest && rest.ErrorResponse != null ? " (code " + rest.ErrorResponse.Code + ")" : "");
         }
         private sealed class VerificationFailure : Exception { internal VerificationFailure(string message) : base(message) { } }
@@ -308,6 +485,20 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         {
             internal BridgeClient(OpenScopeApiClient open) : base(open) { Trash = new TrashCleanupClient(oAuthInfoProvider, configuration, errorHandler); }
             internal TrashCleanupClient Trash { get; }
+            internal new CenterDevice.Rest.Clients.Documents.DocumentRestClient Document
+                => new MediaProbeClient(oAuthInfoProvider, configuration, errorHandler, DefaultStreamWrapper(), apiVersionPrefix);
+        }
+        private sealed class MediaProbeClient : CenterDevice.Rest.Clients.Documents.DocumentRestClient
+        {
+            internal MediaProbeClient(IOAuthInfoProvider auth, IRestClientConfiguration config, IRestClientErrorHandler errors, IStreamWrapper wrapper, string prefix)
+                : base(auth, config, errors, wrapper, prefix) { }
+            protected override async Task<HttpResponseMessage> SendResourceDownloadRequestAsync(HttpRequestMessage request, CancellationToken token)
+            {
+                var response = await base.SendResourceDownloadRequestAsync(request, token);
+                // Only MIME/status diagnostics from owned fixtures, never response bodies, locations or authorization headers.
+                TestContext.Out.WriteLine("Representation response: " + (int)response.StatusCode + ", MIME " + (response.Content?.Headers.ContentType?.MediaType ?? "missing") + ".");
+                return response;
+            }
         }
         private sealed class TrashCleanupClient : CenterDeviceRestClient
         {
