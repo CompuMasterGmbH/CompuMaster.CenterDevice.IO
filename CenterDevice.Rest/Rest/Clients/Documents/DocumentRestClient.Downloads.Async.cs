@@ -136,8 +136,9 @@ namespace CenterDevice.Rest.Clients.Documents
         private readonly CancellationToken token;
         private HttpResponseMessage response;
         private CancellationTokenRegistration registration;
+        internal string ContentType { get; }
         internal ResponseDownloadStream(Stream inner, HttpResponseMessage response, CancellationTokenRegistration registration, CancellationToken token)
-        { this.inner = inner; this.response = response; this.registration = registration; this.token = token; }
+        { this.inner = inner; this.response = response; this.registration = registration; this.token = token; ContentType = response.Content?.Headers.ContentType?.ToString(); }
         public override bool CanRead => inner.CanRead;
         public override bool CanSeek => inner.CanSeek;
         public override bool CanWrite => false;
