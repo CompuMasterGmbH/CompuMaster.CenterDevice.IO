@@ -206,13 +206,22 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     "all", waitForGenerationSeconds: 30, cancellationToken: token)
                     : await client.Document.DownloadPreviewsAsync(contextId, doc.Id, CenterDevice.Rest.Clients.Documents.PreviewSize._240,
                     "all", waitForGenerationSeconds: 30, cancellationToken: token))
-                using (var reader = new StreamReader(previews.Content, Encoding.UTF8))
                 {
-                    var parts = await reader.ReadToEndAsync();
-                    Check(previews.ContentType.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase), "All-pages preview must retain multipart MIME metadata.");
-                    Check(parts.Contains("name=\"1\"") || parts.Contains("name=1"), "The actual preview part must retain its one-based page identity.");
+                    if (previews.ContentType.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using (var reader = new StreamReader(previews.Content, Encoding.UTF8))
+                        {
+                            var parts = await reader.ReadToEndAsync();
+                            Check(parts.Contains("name=\"1\"") || parts.Contains("name=1"), "The actual preview part must retain its one-based page identity.");
+                        }
+                        TestContext.Out.WriteLine("All-pages preview outcome: multipart with boundary and actual page-1 part.");
+                    }
+                    else
+                    {
+                        Check(previews.Content.ReadByte() >= 0, "A single available preview must contain image bytes.");
+                        TestContext.Out.WriteLine("All-pages preview outcome: single available image; no multipart page identities inferred.");
+                    }
                 }
-                TestContext.Out.WriteLine("Multipart preview outcome: ready with boundary and actual page-1 part.");
             }
             catch (DocumentRepresentationNotReadyException error)
             { TestContext.Out.WriteLine("Preview outcome: pending generation, status " + (int)error.StatusCode + "."); }
@@ -235,9 +244,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         private static MemoryStream PdfPayload()
         {
             var content = "BT /F1 12 Tf 20 100 Td (CenterDevice test PDF) Tj ET\n";
-            var objects = new[] { "<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            var objects = new[] { "<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Font << /F1 5 0 R >> >> /Contents 6 0 R >>",
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Font << /F1 5 0 R >> >> /Contents 7 0 R >>",
                 "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+                "<< /Length " + Encoding.ASCII.GetByteCount(content) + " >>\nstream\n" + content + "endstream",
                 "<< /Length " + Encoding.ASCII.GetByteCount(content) + " >>\nstream\n" + content + "endstream" };
             var text = new StringBuilder("%PDF-1.4\n");
             var offsets = new List<int>();
@@ -247,9 +258,10 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 text.Append((i + 1).ToString(CultureInfo.InvariantCulture)).Append(" 0 obj\n").Append(objects[i]).Append("\nendobj\n");
             }
             var xref = Encoding.ASCII.GetByteCount(text.ToString());
-            text.Append("xref\n0 6\n0000000000 65535 f \n");
+            text.Append("xref\n0 ").Append((objects.Length + 1).ToString(CultureInfo.InvariantCulture)).Append("\n0000000000 65535 f \n");
             foreach (var offset in offsets) text.Append(offset.ToString("D10", CultureInfo.InvariantCulture)).Append(" 00000 n \n");
-            text.Append("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n").Append(xref.ToString(CultureInfo.InvariantCulture)).Append("\n%%EOF\n");
+            text.Append("trailer\n<< /Size ").Append((objects.Length + 1).ToString(CultureInfo.InvariantCulture))
+                .Append(" /Root 1 0 R >>\nstartxref\n").Append(xref.ToString(CultureInfo.InvariantCulture)).Append("\n%%EOF\n");
             return new MemoryStream(Encoding.ASCII.GetBytes(text.ToString()), false);
         }
 

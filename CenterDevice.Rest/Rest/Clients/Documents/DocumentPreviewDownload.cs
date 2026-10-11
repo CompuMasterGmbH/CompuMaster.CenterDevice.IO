@@ -4,7 +4,7 @@ using System.IO;
 namespace CenterDevice.Rest.Clients.Documents
 {
     /// <summary>Provides an unbuffered preview body and its negotiated content type.</summary>
-    /// <remarks>Single-page bodies contain an image; multiple-page bodies contain multipart/form-data with page-number part names. Requested pages can be missing. The caller must inspect the multipart parts rather than infer that every requested page was returned.</remarks>
+    /// <remarks>The negotiated content type determines whether the body is an image or multipart/form-data with page-number part names. Requested pages can be missing, and a broader selection can yield a single image. The caller must inspect the actual response and must not infer that every requested page was returned.</remarks>
     public sealed class DocumentPreviewDownload : IDisposable
     {
         internal DocumentPreviewDownload(Stream content, string contentType) { Content = content; ContentType = contentType; }
