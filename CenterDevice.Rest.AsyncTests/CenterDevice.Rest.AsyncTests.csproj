@@ -9,4 +9,10 @@
     <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
     <ProjectReference Include="../CenterDevice.Rest/CenterDevice.Rest.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Download only: compare published contracts without referencing the old assembly. -->
+    <PackageDownload Include="CompuMaster.CenterDevice.Rest" Version="[2026.10.9]" />
+    <None Include="$(NuGetPackageRoot)compumaster.centerdevice.rest/2026.10.9/lib/netstandard2.0/CompuMaster.CenterDevice.Rest.dll"
+          Link="CompatibilityBaseline/CompuMaster.CenterDevice.Rest.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
