@@ -75,5 +75,6 @@ out.mkdir(parents=True, exist_ok=True)
 with (out/'coverage.csv').open('w',encoding='utf-8-sig',newline='') as f:
     writer=csv.DictWriter(f,fieldnames=rows[0].keys(),lineterminator='\r\n')
     writer.writeheader(); writer.writerows(rows)
-print(f'{len(rows)} reference sections; {sum(bool(r["Baseline evidence"].startswith("Protected")) for r in rows)} without dedicated baseline entry points; extraction is an inventory, not a parity certification.')
+operations = [r for r in rows if r["Baseline coverage"] != "Event model inventory; not an HTTP operation"]
+print(f'{len(rows)} reference sections; {len(operations)} HTTP operations; {sum(r["Baseline evidence"].startswith("Protected") for r in operations)} without dedicated baseline entry points; extraction is an inventory, not a parity certification.')
 print('Missing routes:', [(r['Section'],r['Operation']) for r in rows if not r['Method/route'] and 'entry types' not in r['Operation'].lower()])
