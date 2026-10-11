@@ -16,23 +16,31 @@ namespace CenterDevice.Rest.Clients
             new ConcurrentDictionary<string, RequestAllowance>(StringComparer.OrdinalIgnoreCase);
         private readonly IRequestClock clock;
         private readonly Func<Uri, RequestAllowance> allowance;
+        private readonly bool retryReads;
 
         internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner)
+            : this(inner, true) { }
+
+        internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner, bool retryReads)
             : this(inner, new SystemRequestClock(), uri => Allowances.GetOrAdd(
-                uri.GetLeftPart(UriPartial.Authority), key => new RequestAllowance(new SystemRequestClock()))) { }
+                uri.GetLeftPart(UriPartial.Authority), key => new RequestAllowance(new SystemRequestClock())), retryReads) { }
 
         internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner, IRequestClock clock, Func<Uri, RequestAllowance> allowance)
+            : this(inner, clock, allowance, true) { }
+
+        internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner, IRequestClock clock, Func<Uri, RequestAllowance> allowance, bool retryReads)
             : base(inner)
         {
             this.clock = clock;
             this.allowance = allowance;
+            this.retryReads = retryReads;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             HttpResponseMessage previous = null;
             var started = clock.UtcNow;
-            var read = request.Method == HttpMethod.Get || request.Method == HttpMethod.Head;
+            var read = retryReads && (request.Method == HttpMethod.Get || request.Method == HttpMethod.Head);
             for (var attempt = 0; ; attempt++)
             {
                 var requestAllowance = allowance(request.RequestUri);

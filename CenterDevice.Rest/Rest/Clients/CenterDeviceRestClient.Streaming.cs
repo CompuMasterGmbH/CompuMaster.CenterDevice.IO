@@ -17,7 +17,7 @@ namespace CenterDevice.Rest.Clients
     public abstract partial class CenterDeviceRestClient
     {
         private static readonly HttpClient ResourceDownloadTransport = new HttpClient(
-            new CenterDeviceHttpMessageHandler(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false }))
+            new CenterDeviceHttpMessageHandler(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false }, retryReads: false))
         { Timeout = Timeout.InfiniteTimeSpan };
 
         /// <summary>Sends a resource download without buffering its body or following redirects.</summary>
