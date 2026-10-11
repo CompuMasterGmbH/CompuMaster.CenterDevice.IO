@@ -114,6 +114,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             var v2 = (await client.Document.UploadNewVersionAsync(contextId, doc.Id, ledger.Filename, () => Payload("B"), token)).Version;
             var v3 = (await client.Document.UploadNewVersionAsync(contextId, doc.Id, ledger.Filename, () => Payload("C"), token)).Version;
             Check(v2 > v1 && v3 > v2, "Uploads must advance version numbers.");
+            await CheckHistory(sync, doc.Id, v3, new[] { v1, v2, v3 }, token);
             CheckLease();
             phase = "revert existing version";
             var v4 = sync ? client.Document.RevertDocumentVersion(contextId, doc.Id, v1).Version
@@ -129,6 +130,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             var v5 = sync ? client.Document.RevertDocumentVersion(contextId, doc.Id, v1).Version
                 : (await client.Document.RevertDocumentVersionAsync(contextId, doc.Id, v1, token)).Version;
             Check(v5 > v4, "A second revert must create another version.");
+            await CheckHistory(sync, doc.Id, v5, new[] { v1, v2, v3, v4, v5 }, token);
             await CheckPayload(doc.Id, v5, "A", token);
             CheckLease();
             phase = "remove selected/current versions";
@@ -136,6 +138,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             else await client.Document.RemoveDocumentVersionsAsync(contextId, doc.Id, new[] { v2, v4, v5 }, token);
             var remaining = await client.Document.GetDocumentMetadataAsync(contextId, doc.Id, token);
             Check(remaining.Id == doc.Id && remaining.Version == v3, "Largest remaining version must become current without changing identity.");
+            await CheckHistory(sync, doc.Id, v3, new[] { v1, v3 }, token);
             await CheckPayload(doc.Id, null, "C", token);
             foreach (var deleted in new[] { v2, v4, v5 })
                 await ExpectMissingVersion(doc.Id, deleted, token);
@@ -171,6 +174,18 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             }
             Check((await client.Document.GetDocumentMetadataAsync(contextId, doc.Id, token)).Version == v6, "Pre-canceled commands must not change the current version.");
             await CheckPayload(doc.Id, v1, "A", token);
+        }
+
+        private async Task CheckHistory(bool synchronous, string id, long currentVersion, long[] versions, CancellationToken token)
+        {
+            var history = synchronous ? client.Document.GetDocumentVersionHistory(contextId, id)
+                : await client.Document.GetDocumentVersionHistoryAsync(contextId, id, token);
+            Check(history.Id == id && history.Version == currentVersion, "History must bind the selected document and current version.");
+            Check(history.VersionDetails != null, "The owning test account must receive version details.");
+            Check(history.VersionDetails.Select(v => v.Version).OrderBy(v => v).SequenceEqual(versions.OrderBy(v => v).Select(v => (long?)v)),
+                "History must contain the actual existing versions without removed or invented entries.");
+            Check(history.VersionDetails.All(v => v.Filename == ledger.Filename && v.Size == 1 && v.VersionDate.HasValue),
+                "Version history must retain per-version filename, content size and timestamp.");
         }
 
         private async Task CheckPayload(string id, long? version, string expected, CancellationToken token)
