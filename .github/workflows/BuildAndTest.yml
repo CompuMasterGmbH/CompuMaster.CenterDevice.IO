@@ -1,4 +1,4 @@
-name: Build and Test
+﻿name: Build and Test
 
 # PREREQUISITES FOR PUSH-BACK OF TEST RESULTS
 # Please note: test project usually required nuget package JUnitTestLogger
@@ -78,6 +78,13 @@ jobs:
 
             - name: Build
               run: dotnet build --configuration=${{env.BUILD_CONFIGURATION}} --no-restore
+
+            - name: Run isolated SDK regression tests - .NET 8.0
+              run: dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --framework net8.0 --configuration=${{env.BUILD_CONFIGURATION}} --results-directory isolated-results-net8.0 --logger trx
+
+            - name: Run isolated SDK regression tests - .NET Framework 4.8
+              if: startsWith(matrix.os, 'windows')
+              run: dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --framework net48 --configuration=${{env.BUILD_CONFIGURATION}} --results-directory isolated-results-net48 --logger trx
 
             - name: Run Unit Tests - .NET 8.0
               run: dotnet test --framework net8.0 --results-directory test-results-net8.0 --logger junit --configuration=${{env.BUILD_CONFIGURATION}} --no-restore
