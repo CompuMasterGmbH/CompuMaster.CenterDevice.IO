@@ -334,6 +334,20 @@ namespace CenterDevice.Rest.AsyncTests
             Assert.That(content.Disposed, Is.True);
         }
 
+        [Test]
+        public async Task AllPagesCanReturnASingleActualImageWithoutInventingMultipartParts()
+        {
+            var content = new StringContent("single image");
+            content.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            var client = new Client(new Auth()) { Content = content };
+            using (var result = await client.DownloadPreviewsAsync("user", "id", PreviewSize._240, "all"))
+            using (var reader = new StreamReader(result.Content))
+            {
+                Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
+                Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("single image"));
+            }
+        }
+
         [TestCase("all"), TestCase("1,3-7,10,12"), TestCase("1-5")]
         public async Task MultiplePreviewPagesRetainTheirBoundaryAndDoNotInventMissingParts(string pages)
         {

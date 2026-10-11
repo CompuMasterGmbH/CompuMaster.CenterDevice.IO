@@ -19,7 +19,7 @@ A successful response must have the requested MIME type; partial PDF/MP4 respons
 
 ## Multipart previews
 
-A single selected page yields PNG or JPEG. Multiple requested pages yield raw multipart/form-data; ContentType includes its validated boundary and each part's Content-Disposition names its page number. Consume or parse Content while the download is alive. Partial availability does not establish that every requested image exists: inspect the actual parts. The SDK preserves the streamed body without synthesizing missing pages or buffering all images. A permanent generation failure with include-error-info can return 404/error 307, preserved by the existing typed error contract.
+The actual ContentType determines whether the body is PNG/JPEG or raw multipart/form-data. A broader selection such as all can yield one available image; that does not establish all requested page identities. Multipart ContentType includes its validated boundary and each part's Content-Disposition names its page number. Consume or parse Content while the download is alive. Partial availability does not establish that every requested image exists: inspect the actual parts. The SDK preserves the streamed body without synthesizing missing pages or buffering all images. A permanent generation failure with include-error-info can return 404/error 307, preserved by the existing typed error contract.
 
 ## ZIP semantics
 

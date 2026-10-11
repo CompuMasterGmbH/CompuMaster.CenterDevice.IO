@@ -30,7 +30,7 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="includeErrorInfo">The optional request for permanent preview-generation error information; null preserves the server default.</param>
         /// <param name="cancellationToken">Cancels authorization, admission, HTTP I/O and the returned body.</param>
         /// <returns>A response-owned image or multipart download that the caller must dispose.</returns>
-        /// <remarks>Accepts both PNG and JPEG. Multiple-page responses retain their multipart boundary and page-number part names; missing requested parts are possible and must not be treated as empty images. Guests can access only the latest version. Pending generation is explicit and never retried automatically. This additive method leaves the original DownloadPreview defaults unchanged.</remarks>
+        /// <remarks>Accepts PNG, JPEG and multipart responses according to actual server availability. Multipart responses retain their boundary and page-number part names; missing requested parts are possible and must not be treated as empty images. A single returned image does not establish the identities of all requested pages. Guests can access only the latest version. Pending generation is explicit and never retried automatically. This additive method leaves the original DownloadPreview defaults unchanged.</remarks>
         /// <exception cref="ArgumentException">The document ID or page selection is invalid.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The resolution, version or generation wait is invalid.</exception>
         /// <exception cref="DocumentRepresentationNotReadyException">Generation is pending or its server wait expired.</exception>
@@ -48,7 +48,6 @@ namespace CenterDevice.Rest.Clients.Documents
             if (version <= 0) throw new ArgumentOutOfRangeException(nameof(version));
             if (waitForGenerationSeconds < 1 || waitForGenerationSeconds > 30) throw new ArgumentOutOfRangeException(nameof(waitForGenerationSeconds));
             ValidatePreviewPages(pages);
-            var singlePage = int.TryParse(pages, NumberStyles.None, CultureInfo.InvariantCulture, out var single) && single > 0;
             var path = URI_RESOURCE + Uri.EscapeDataString(id);
             if (version.HasValue) path += ";version=" + version.Value.ToString(CultureInfo.InvariantCulture);
             path += ";preview=" + size.ToApiParameter() + ";pages=" + pages;
@@ -63,11 +62,11 @@ namespace CenterDevice.Rest.Clients.Documents
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("image/png"));
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("image/jpeg"));
                 return request;
-            }, HttpStatusCode.OK, singlePage ? new[] { "image/png", "image/jpeg" } : new[] { "multipart/form-data" }, true, cancellationToken).ConfigureAwait(false);
+            }, HttpStatusCode.OK, new[] { "image/png", "image/jpeg", "multipart/form-data" }, true, cancellationToken).ConfigureAwait(false);
             try
             {
                 var contentType = ((ResponseDownloadStream)stream).ContentType;
-                if (!singlePage)
+                if (contentType.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase))
                 {
                     var parsed = MediaTypeHeaderValue.Parse(contentType);
                     var boundaries = parsed.Parameters.Where(p => p.Name.Equals("boundary", StringComparison.OrdinalIgnoreCase)).ToArray();
