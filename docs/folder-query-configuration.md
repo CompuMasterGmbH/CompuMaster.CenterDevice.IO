@@ -1,0 +1,9 @@
+﻿# Explicit folder queries and locations
+
+GetConfiguredFolders and its native asynchronous form cover all API 2.29 section 5.4.11 parameters with copied individual IDs/fields, original collection/parent/document/path/group/text and nullable sharing/top-most/public-collection flags. No original path conversion or default scope is inserted. Explicit false remains distinct from omission. Text combines only with fields; inherited-sharings is unavailable in listings and full-path requires explicit shared-only/top-most true. The server controls scope relationships, documented ignored document/ID filters under shared-only and visibility. Existing listing methods/interfaces remain unchanged.
+
+CreateSelectedFolder retains both explicit collection and parent (section 5.4.1), including none for top-level creation. When only a collection is supplied, parent is omitted. MoveFolderTo retains both provided destination choices (section 5.4.3); parent none with omitted collection keeps server current-collection semantics. The server verifies matching parent/collection, cycles, uniqueness, normal collection state and actual roles. Neither operation looks up a parent, inserts a default or adds speculative replay. Existing create/move defaults remain unchanged.
+
+Successful listings require a folders array, while HTTP 204 yields an explicit empty list. Missing optional child metadata remains unknown; explicit false is known. Creation requires a usable returned identifier. Native cancellation reaches authorization and HTTP I/O; cancellation after a write cannot establish unchanged state. Original response-handler errors remain available.
+
+Isolated fixtures verify complete original query/location choices, snapshots, supported disclosure constraints, unknown/false child metadata, errors and cancellation. Actual role/topology/public visibility, cleanup, publication and downstream adoption remain separate in #19/#15.
