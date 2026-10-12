@@ -46,6 +46,9 @@ namespace CenterDevice.Rest.Clients.User
 
         /// <summary>Retrieves selected details for a user using asynchronous HTTP I/O.</summary>
         /// <inheritdoc cref="GetUserDataField"/>
+        /// <param name="userId">The authentication-context user identifier.</param>
+        /// <param name="userIdToRequest">The explicitly selected user identifier.</param>
+        /// <param name="field">The comma-separated manufacturer data fields, or all for all available details.</param>
         /// <param name="cancellationToken">Cancels queue admission and active HTTP I/O.</param>
         public async Task<FullUserData> GetUserDataFieldAsync(string userId, string userIdToRequest, string field, CancellationToken cancellationToken = default(CancellationToken))
         {
