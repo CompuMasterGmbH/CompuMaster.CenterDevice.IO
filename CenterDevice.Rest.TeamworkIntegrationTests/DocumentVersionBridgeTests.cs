@@ -59,7 +59,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         public async Task RecoverOwnedResourcesThroughTeamwork()
             => await RunWithOwnedCollection(false, false, cleanupOnly: true);
 
-        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false)
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false, bool trashCommands = false)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -99,7 +99,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
                     phase = synchronous ? "sync document operations" : "async document operations";
-                    if (copyAndMove) await VerifyCopyAndMove(synchronous, timeout.Token);
+                    if (trashCommands) await VerifyTrashCommands(synchronous, timeout.Token);
+                    else if (copyAndMove) await VerifyCopyAndMove(synchronous, timeout.Token);
                     else if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
                     else if (representations) await VerifyRepresentations(synchronous, timeout.Token);
                     else await VerifyVersions(synchronous, timeout.Token);
@@ -122,7 +123,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 if (originalFailure != null || cleanupFailure != null)
                     Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup phase: " + cleanupPhase + "; cleanup: " + Diagnostic(cleanupFailure));
                 if (cleanupOnly) { TestContext.Out.WriteLine("Owned resource recovery and ledger absence verified."); return; }
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (copyAndMove
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (trashCommands
+                    ? ": own-trash metadata, selected restore/partial failures, stable identity/history/payload, selected permanent erasure, cancellation and complete cleanup verified."
+                    : copyAndMove
                     ? ": single/bulk and recursive/flat directory copies, new identities, source/history/payload preservation, file moves, cancellation and complete cleanup verified."
                     : tagsAndLocks
                     ? ": selected/bulk tags, exact partial failures, owner lock/unlock, cancellation and complete cleanup verified."
@@ -647,7 +650,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         private sealed class BridgeClient : TeamworkRestClient
         {
             internal BridgeClient(OpenScopeApiClient open) : base(open) { Trash = new TrashCleanupClient(oAuthInfoProvider, configuration, errorHandler); }
-            internal TrashCleanupClient Trash { get; }
+            internal new TrashCleanupClient Trash { get; }
             internal new CenterDevice.Rest.Clients.Documents.DocumentRestClient Document
                 => new MediaProbeClient(oAuthInfoProvider, configuration, errorHandler, DefaultStreamWrapper(), apiVersionPrefix);
         }

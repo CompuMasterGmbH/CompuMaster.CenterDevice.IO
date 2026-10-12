@@ -50,6 +50,9 @@ namespace CenterDevice.Rest.Clients
 
         protected abstract string UploadLinkBaseUrl { get; }
 
+        /// <summary>Gets a client for the authenticated user's own trash.</summary>
+        public Rest.Clients.Trash.TrashRestClient Trash => new Rest.Clients.Trash.TrashRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
