@@ -152,8 +152,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 foreach (var document in page.Documents)
                 {
                     Check(document.Owner == ownerId && document.Filename == owned.Filename && !document.IsShared, "Only the fixture's private owned document may be removed.");
-                    Check(document.Collections?.Visible != null && document.Collections.NotVisibleCount == 0 && document.Collections.Visible.All(id => owned.Scopes.Any(candidate => candidate.Id == id || candidate.Name == collections.FirstOrDefault(c => c.Id == id)?.Name)),
-                        "The fixture document must not have references outside the recorded owned collections.");
+                    RequireOwnedCollectionReferences(document, scope.Id, owned.Scopes.Select(candidate => candidate.Id ?? collections.SingleOrDefault(c => c.Name == candidate.Name)?.Id).Where(id => id != null).ToArray());
                     if (!owned.Documents.Contains(document.Id)) owned.Documents.Add(document.Id);
                     documents.Add(document);
                 }
@@ -209,6 +208,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         }
 
         private static void SaveParallelLedger(ParallelLedger owned) => File.WriteAllText(ParallelLedgerPath, JsonSerializer.Serialize(owned), new UTF8Encoding(true));
+        internal static void RequireOwnedCollectionReferences(DocumentFullMetadata document, string currentScopeId, IReadOnlyCollection<string> ownedScopeIds)
+            => Check(document?.Collections?.Visible != null && document.Collections.NotVisibleCount == 0 && document.Collections.Visible.Contains(currentScopeId) &&
+                document.Collections.Visible.All(id => ownedScopeIds.Contains(id)), "The fixture document must contain its current scope and must not have hidden or external collection references.");
         public sealed class ParallelLedger
         {
             public string Owner { get; set; }
