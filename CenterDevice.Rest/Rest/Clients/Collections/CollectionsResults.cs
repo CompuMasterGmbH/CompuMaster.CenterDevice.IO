@@ -54,7 +54,7 @@ namespace CenterDevice.Rest.Clients.Collections
                     return null;
             }
         }
-        public List<Rest.Clients.Documents.Metadata.DocumentFullMetadata> Documents;
+        public List<CenterDevice.Rest.Clients.Documents.Metadata.DocumentFullMetadata> Documents;
 
         [JsonPropertyName(RestApiConstants.ARCHIVED_DATE)]
         public DateTime? ArchivedDate { get; set; }
