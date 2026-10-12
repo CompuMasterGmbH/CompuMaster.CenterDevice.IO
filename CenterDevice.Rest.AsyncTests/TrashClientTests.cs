@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace CenterDevice.Rest.AsyncTests
 {
     [TestFixture]
-    public class TrashClientTests
+    public partial class TrashClientTests
     {
         [TestCase(false), TestCase(true)]
         public async Task PagePreservesServerOrderLargeSizeOffsetsAndUnknownMetadata(bool sync)
@@ -206,7 +206,7 @@ namespace CenterDevice.Rest.AsyncTests
             if (action == "restore") return sync ? Task.FromResult(client.RestoreDocuments("context", ids, token)) : client.RestoreDocumentsAsync("context", ids, token);
             return sync ? Task.FromResult(client.EraseDocuments("context", ids, token)) : client.EraseDocumentsAsync("context", ids, token);
         }
-        [TestCase("get"), TestCase("erase"), TestCase("all")]
+        [TestCase("get"), TestCase("erase"), TestCase("all"), TestCase("search"), TestCase("search-error")]
         public async Task ActualLoopbackParsesUtf8MetadataAndDoesNotReplayTrashWrites(string action)
         {
             var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -237,9 +237,10 @@ namespace CenterDevice.Rest.AsyncTests
                             offset += read;
                         }
                         capturedBody = Encoding.UTF8.GetString(body);
-                        var json = action == "get" ? "{\"documents\":[{\"id\":\"owned\",\"filename\":\"ä.txt\",\"mimetype\":\"text/plain\",\"deletion-date\":\"2026-10-12T08:09:10Z\"}]}" : "{}";
+                        var json = action == "get" ? "{\"documents\":[{\"id\":\"owned\",\"filename\":\"ä.txt\",\"mimetype\":\"text/plain\",\"deletion-date\":\"2026-10-12T08:09:10Z\"}]}"
+                            : action == "search" ? "{\"hits\":1,\"documents\":[{\"id\":\"owned\",\"filename\":\"ä.txt\",\"score\":2.5}],\"facets\":{\"filename\":{\"terms\":[{\"term\":\"ä.txt\",\"count\":1}]}}}" : "{}";
                         var payload = Encoding.UTF8.GetBytes(json);
-                        var header = Encoding.ASCII.GetBytes("HTTP/1.1 " + (action == "get" ? "200 OK" : "503 Service Unavailable") + "\r\nContent-Type: application/json\r\nContent-Length: " + payload.Length + "\r\nConnection: close\r\n\r\n");
+                        var header = Encoding.ASCII.GetBytes("HTTP/1.1 " + (action == "get" || action == "search" ? "200 OK" : "503 Service Unavailable") + "\r\nContent-Type: application/json\r\nContent-Length: " + payload.Length + "\r\nConnection: close\r\n\r\n");
                         await stream.WriteAsync(header, 0, header.Length, cancellation.Token);
                         await stream.WriteAsync(payload, 0, payload.Length, cancellation.Token);
                     }
@@ -256,14 +257,27 @@ namespace CenterDevice.Rest.AsyncTests
                         Assert.That(page.Single().DeletionDate.HasValue, Is.True);
                         Assert.That(page.Single().Size, Is.Null);
                     }
+                    else if (action == "search")
+                    {
+                        var result = await client.SearchAsync("context", new TrashSearchRequest { Query = new TrashSearchQuery { Text = "ä" } }, cancellation.Token);
+                        Assert.That(result.Documents.Single().Filename, Is.EqualTo("ä.txt"));
+                        Assert.That(result.Documents.Single().Score, Is.EqualTo(2.5));
+                        Assert.That(result.Facets["filename"]["terms"][0]["term"].Value<string>(), Is.EqualTo("ä.txt"));
+                    }
                     else Assert.CatchAsync<RestClientException>((Func<Task>)(async () =>
                     {
                         if (action == "all") await client.EraseAllDocumentsAsync("context", cancellation.Token);
+                        else if (action == "search-error") await client.SearchAsync("context", new TrashSearchRequest { Query = new TrashSearchQuery { Text = "ä" } }, cancellation.Token);
                         else await client.EraseDocumentsAsync("context", new[] { "owned" }, cancellation.Token);
                     }));
                     await server;
                     Assert.That(capturedHeader.Split(new[] { "\r\n" }, StringSplitOptions.None)[0], Does.StartWith(action == "get" ? "GET /bridge/v2/trash?" : action == "all" ? "DELETE /bridge/v2/trash " : "POST /bridge/v2/trash "));
                     if (action == "erase") Assert.That((string)JObject.Parse(capturedBody)["action"], Is.EqualTo("erase-documents"));
+                    else if (action == "search" || action == "search-error")
+                    {
+                        Assert.That((string)JObject.Parse(capturedBody)["action"], Is.EqualTo("search"));
+                        Assert.That((string)JObject.Parse(capturedBody)["params"]["query"]["text"], Is.EqualTo("ä"));
+                    }
                     else Assert.That(capturedBody, Is.Empty);
                     Assert.That(listener.Pending(), Is.False, "Uncertain trash writes must not reconnect for replay.");
                 }
