@@ -315,20 +315,12 @@ namespace CenterDevice.IO
                 System.IO.File.SetLastWriteTimeUtc(targetFileName, this.ModificationDate.Value);
         }
 
-        /// <summary>
-        /// Move a file into a target directory
-        /// </summary>
-        /// <param name="targetDirectory"></param>
+        /// <summary>Moves a document into a target directory without changing its identifier.</summary>
+        /// <param name="targetDirectory">The target collection or folder in the same authenticated instance.</param>
+        /// <inheritdoc cref="MoveAsync"/>
         public void Move(DirectoryInfo targetDirectory)
         {
-            if (targetDirectory.IsRootDirectory)
-                throw new System.NotSupportedException("Moving a file into root directory is not supported");
-            this.ioClient.ApiClient.Documents.MoveDocuments(this.ioClient.CurrentAuthenticationContextUserID, new string[] { this.ID },
-                this.ParentDirectory.AssociatedCollection.CollectionID, this.parentDirectory.FolderID,
-                targetDirectory.AssociatedCollection.CollectionID, targetDirectory.FolderID);
-            this.parentDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
-            targetDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
-            this.parentDirectory = targetDirectory; //correctly re-assign current file to new parent directory
+            MoveAsync(targetDirectory).ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }

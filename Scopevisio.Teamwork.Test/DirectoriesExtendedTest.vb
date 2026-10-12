@@ -832,7 +832,7 @@ Imports CenterDevice.Test.Tools
     ''' <summary>
     ''' Move a file from a first collection/folder to another one (WARNING: special CenterDevice behaviour: moving a file from a 1st collection to a 2nd collection will automatically remove any links in 2nd collection which might already exist in one of the folders of 2nd collection)
     ''' </summary>
-    <Test, Ignore("Not yet supported/implemented")> Public Sub MoveFiles()
+    <Test, Ignore("Superseded by CopyAndMoveThroughTeamwork in the explicit owned-resource integration project; this legacy fixture uses fixed shared paths without failure-safe cleanup.")> Public Sub MoveFiles()
         Const RemoteTestFolderNameSrc As String = "ZZZ_UnitTest_CenterDevice_TempDir_MoveFiles_Src"
         Const RemoteTestFolderNameDestCollection As String = "ZZZ_UnitTest_CenterDevice_TempDir_MoveFiles_Dest"
         Const RemoteTestFolderNameDestFolder1 As String = "ZZZ_UnitTest_CenterDevice_TempDir_MoveFiles_Dest/subfolder1"
