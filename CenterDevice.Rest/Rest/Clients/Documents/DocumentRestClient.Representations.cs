@@ -92,7 +92,7 @@ namespace CenterDevice.Rest.Clients.Documents
             if (id == "." || id == "..") throw new ArgumentException("A document identifier must not be a relative path segment.", nameof(id));
             var path = URI_RESOURCE + Uri.EscapeDataString(id);
             if (version.HasValue) path += ";version=" + version.Value.ToString(CultureInfo.InvariantCulture);
-            var uri = new Uri(new Uri(CustomOptionBaseAddress), path);
+            var uri = BuildResourceDownloadUri(path);
             if (waitForGenerationSeconds.HasValue)
                 uri = new Uri(uri.AbsoluteUri + "?wait-for-generation=" + waitForGenerationSeconds.Value.ToString(CultureInfo.InvariantCulture));
             var stream = await OpenResourceDownloadAsync(userId, () =>

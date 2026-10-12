@@ -55,7 +55,7 @@ namespace CenterDevice.Rest.Clients.Documents
             if (waitForGenerationSeconds.HasValue) query.Add("wait-for-generation=" + waitForGenerationSeconds.Value.ToString(CultureInfo.InvariantCulture));
             if (includeErrorInfo.HasValue) query.Add("include-error-info=" + (includeErrorInfo.Value ? "true" : "false"));
             if (query.Count > 0) path += "?" + string.Join("&", query);
-            var uri = new Uri(new Uri(CustomOptionBaseAddress), path);
+            var uri = BuildResourceDownloadUri(path);
             var stream = await OpenResourceDownloadAsync(userId, () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, uri);
