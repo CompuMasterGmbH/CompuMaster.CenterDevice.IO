@@ -77,6 +77,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for visible metadata templates and their sharing contracts.</summary>
         public Rest.Clients.MetadataTemplates.MetadataTemplatesRestClient MetadataTemplates => new Rest.Clients.MetadataTemplates.MetadataTemplatesRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for own workflow-template management and explicit template use.</summary>
+        public Rest.Clients.WorkflowTemplates.WorkflowTemplatesRestClient WorkflowTemplates => new Rest.Clients.WorkflowTemplates.WorkflowTemplatesRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);

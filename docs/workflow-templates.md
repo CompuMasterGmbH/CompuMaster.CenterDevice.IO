@@ -1,0 +1,28 @@
+﻿# Workflow-template management
+
+API 2.29 sections 5.21.1–6 are available through the additive `WorkflowTemplates` factory and synchronous/native asynchronous methods on `WorkflowTemplatesRestClient`. Template management does not change previously created workflows. Creating a workflow from a template is an explicit separate operation with server side effects.
+
+| Operation | Route | Success |
+|---|---|---|
+| CreateWorkflowTemplate | POST workflow-templates | 201, confirmed template id |
+| CreateWorkflow | POST workflow-template/id, action workflow | 201, confirmed workflow id |
+| GetWorkflowTemplate | GET workflow-template/id | 200, original detail |
+| GetWorkflowTemplates | GET workflow-templates | 200, own-template list |
+| UpdateWorkflowTemplate | PUT workflow-template/id | 204 |
+| RemoveWorkflowTemplate | DELETE workflow-template/id | 204 |
+
+Creation requires an explicit name and current type `read`, `approval` or `metadata-form`. Users and groups are original selections; groups resolve to participants when creating a workflow. The server enforces the combined 200-user limit without a guessed local group count. Confirmation mode accepts `one` or `all`; metadata-form requires `one` or omission. Automatic document sharing defaults to true, visibility to participant, and sharing removal to no through omission. Explicit false, empty comment/arrays/objects and exact original strings remain explicit. No omitted response default is invented.
+
+Metadata-form creation requires a completion-condition object. Its optional metadata-template IDs and individual metadata fields resolve at workflow creation; the combined effective fields must then contain at least one field. An explicitly empty condition is preserved rather than incorrectly rejecting template creation because later workflow creation would fail. Current input keys use `user.strings.`, `user.numbers.` or `user.dates.` with a usable tail; optional defaults remain original strings, preserving decimal precision and ISO8601 text. Future response keys and extra complete nested data remain original.
+
+Finalizing actions use the workflow contract from section 5.20.1, including location keys `collection`/`folder` and `source-collection`/`source-folder`. They differ from rule-action `id` keys. `WorkflowFinalizingAction` provides all seven current actions: add/remove tags, add/move to collection/folder, and remove from location. Move/removal selects exactly one source. At most one action is currently permitted per confirmed/rejected result; a rejected result applies only to approval workflows. Construction executes nothing. The server enforces destination visibility, membership and final execution. Removing from a location removes a reference rather than permanently erasing the document. Current input shapes are guarded while future returned action names/data are preserved.
+
+Workflow use selects a nonblank template ID, document ID and explicit positive Int64 document version. The POST body contains action `workflow` and a nested `data` object, not rule `params`. Its returned ID identifies the new workflow. This operation can notify participants, create document sharings and later execute finalizing actions; it is non-idempotent. Document visibility, creator restrictions, group resolution, completion fields and participant limits remain server-enforced. Automatic sharing false causes failure if selected users cannot see the document; sharing-removal on-completion applies to sharings created by the workflow.
+
+Creation is allowed for administrator/internal/external users. Retrieval, use and removal are creator-restricted. The manufacturer describes update roles as administrator/internal/external without supplying an additional client-side creator inference. List results contain templates created by the caller; no tenant completeness, paging, total, creator field or timestamp is invented. Original complete immutable metadata retains future values, null-versus-empty selections and defensive copies of completion/finalizing/envelope data. Malformed successful responses, mismatched selected identity and canonical repeated GUID identities fail with original inner causes.
+
+Updates send only provided fields; omitted fields remain unchanged. Selecting automatic-sharing true or false on update fails before authorization because that field cannot be updated. Name and sharing-removal use the documented same-as-creation entity contract although the update introduction does not enumerate them; accepted transitions remain server-validated. Updating/removing a template preserves already-created workflows. The delete section's path placeholder says workflow-id despite describing removal of a template; the client selects the template ID on the workflow-template route.
+
+Sequences and nested objects snapshot once before authorization. Native cancellation, existing authentication/admission/transport defaults and safe bounded GET retries remain intact; uncertain create/use/update/remove writes are not replayed. Existing interfaces and factories retain their previous behavior.
+
+Isolated tests cover all six routes, sync/native APIs, omitted defaults, explicit empty selections, exact nested data, all seven action shapes, metadata resolution boundaries, creator/visibility errors, immutable future metadata, identity/list failures, cancellation, real public-factory loopback HTTP, UTF-8, GET retry and write no-replay. Real role grants, template lifecycle, group/metadata resolution, notifications, automatic sharing and finalizing execution require separate coordinated exact-owned Teamwork acceptance and cleanup. Current post-merge matrix, explicitly approved publication and downstream default adoption remain separate.
