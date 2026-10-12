@@ -1,0 +1,13 @@
+﻿# Complete group detail reads
+
+API 2.29 sections 5.11.9–10 are available through additive concrete methods `Group.GetGroupDetails[Async]` and `Groups.GetGroupsDetails[Async]`. Existing GetGroup/GetAllGroups, their mutable models, interfaces and defaults remain unchanged.
+
+Selected retrieval uses bodyless GET group/id with escaped exact selection and confirmed 200 identity. Listing uses bodyless GET groups with the existing nullable GroupsFilter: null omits all and preserves the membership default, MembershipsOfCurrentUser sends all=false, AllVisibleGroupsForCurrentUser sends all=true. Invalid enum selections fail before authorization. Confirmed 204 yields an immutable empty list; malformed 200 and permission/transport errors remain failures. No tenant completeness, paging or totals are inferred.
+
+Immutable GroupDetails retains original ID/name, nullable Int32 color, optional original public/private/future type, read-only member IDs and optional read-only GroupAdministratorDetails. Missing/JSON-null color/type/members remain unknown rather than invented zero/public/empty values. Missing/hidden/JSON-null admins differs from an explicit empty array. GroupAdministratorDetails retains exact user-id and group-management/group-membership/future privilege strings. Caller identity/roles, ownership, document visibility and administrator counts are not substituted or inferred.
+
+Public groups are visible to internal users, tenant administrators and group members. Private groups are visible to group administrators and members. Private administrator details are exposed to group administrators and members who are internal users or tenant administrators; a hidden list does not mean no administrators. Group administration by itself does not grant access to documents shared with the group. Special ALL_USERS_tenant IDs remain valid original identities.
+
+The client preserves server order, exact strings and canonical selected GUID identity; repeated canonical group/member/admin IDs fail clearly with inner causes. Native cancellation reaches authorization/admission/I/O, bounded safe GET retry and token-refresh defaults remain unchanged. No group mutation or real permission inference is performed by these reads.
+
+Isolated tests cover selected/list sync/native routes, omitted/false/true filters, 200/204/errors, original/future/unknown/empty metadata, immutable shape/ID validation, special identities, cancellation and actual public-factory loopback GET/retry probes. Real public/private/internal/external visibility and hidden administrator acceptance remain separately coordinated server work under #20; full matrix, explicitly approved publication and exact default downstream adoption remain under #15 and CompuMaster.Dms #90.
