@@ -1,0 +1,11 @@
+﻿# Server-side document copies
+
+`DocumentRestClient.CopyDocument[Async]` implements API 2.29 section 5.2.38 and returns the new document ID confirmed by the server. `DocumentsRestClient.CopyDocuments[Async]` implements section 5.2.39 and accepts immutable `DocumentCopyRequest` selections containing a source ID and a filename. Bulk selections are enumerated once and snapshotted before authorization; repeated source IDs are retained to create separate copies.
+
+The optional collection and folder destinations are mutually exclusive. Omit both for a new document without either explicit destination. The server copies each latest original representation without inheriting CenterDevice sharing, tags, comments, version history or extended metadata. Source documents and their existing references are not modified or deleted. The server requires an admin, internal or external user with appropriate visibility/access.
+
+Bulk results are read-only new-ID lists in server order. They do not establish a source-to-result mapping. Missing, empty, duplicated or source-reusing identifiers are rejected as invalid response data; this rejection does not imply that the server created no copies. The SDK does not retry or attempt cleanup after an ambiguous copy outcome.
+
+Each successful call creates new documents and is non-idempotent. Cancellation reaches authorization, admission and native HTTP I/O but cannot prove that a submitted copy was not committed. Existing recognized expired-token handling remains in the authorized request path; transient failures are not replayed. Existing interfaces and IO copy behavior are unchanged, so using these REST operations does not silently change existing callers' copy defaults.
+
+Isolated fixtures verify actual default serialization, exact selected/bulk command bodies, Unicode filenames, immutable inputs/results, repeated selections, destination constraints, new identity, error causes and cancellation. Actual private loopback HTTP tests verify valid UTF-8 JSON and no copy POST replay after HTTP 503. These commands have not yet received live Teamwork or direct CenterDevice verification; metadata inheritance, role restrictions and actual remote copy payloads remain live acceptance tasks in issue #6.
