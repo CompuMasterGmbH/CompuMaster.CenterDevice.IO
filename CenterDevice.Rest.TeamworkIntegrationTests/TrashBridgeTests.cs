@@ -131,25 +131,33 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             // API2.29 5.19.2 inherits 5.2.22's asynchronous indexing. Retry only this read-only selected-ID search.
             using (var indexing = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
-                indexing.CancelAfter(TimeSpan.FromSeconds(30));
+                indexing.CancelAfter(TimeSpan.FromMinutes(2));
                 long? lastHits = null;
                 int? lastCount = null;
+                var elapsed = System.Diagnostics.Stopwatch.StartNew();
+                var attempts = 0;
                 try
                 {
                     while (true)
                     {
                         CheckLease();
+                        attempts++;
                         var result = sync ? trash.Search(contextId, request, indexing.Token) : await trash.SearchAsync(contextId, request, indexing.Token);
                         lastHits = result.Hits; lastCount = result.Documents.Count;
                         Check(result.Hits <= 1 && result.Documents.All(document => document.Id == ownedId),
                             "Scoped search must never return another identity or multiple owned-ID hits.");
-                        if (expected(result)) return result;
+                        if (expected(result))
+                        {
+                            TestContext.Out.WriteLine("Owned trash search visibility: attempts " + attempts + ", elapsed milliseconds " + elapsed.ElapsedMilliseconds +
+                                ", hits " + result.Hits + ", page count " + result.Documents.Count + ".");
+                            return result;
+                        }
                         await Task.Delay(TimeSpan.FromSeconds(1), indexing.Token);
                     }
                 }
                 catch (OperationCanceledException) when (indexing.IsCancellationRequested && !token.IsCancellationRequested)
                 {
-                    throw new VerificationFailure("Owned trash search indexing timed out after 30 seconds; last hits " +
+                    throw new VerificationFailure("Owned trash search did not reach the expected state within 120 seconds; attempts " + attempts + ", last hits " +
                         (lastHits?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown") + ", page count " +
                         (lastCount?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown") + ".");
                 }
