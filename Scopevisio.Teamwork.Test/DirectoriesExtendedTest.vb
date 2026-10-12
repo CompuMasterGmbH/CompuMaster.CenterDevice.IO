@@ -762,72 +762,9 @@ Imports CenterDevice.Test.Tools
     ''' <summary>
     ''' A file/document can be referenced in a 1st collection to an origin source in a 2nd collection, but there can't be more than 1 link per collection -> 1st collection can contain (including all sub folders) max. 1 link -> adding a 2nd file link in a folder of 1st collection directly removes the origin 1st link in 1st collection
     ''' </summary>
-    <Ignore("NUnit.Framework.AssertionException: Remote folder path ""ZZZ_UnitTest_CenterDevice_TempDir_CopyFiles_Dest"" is expected to not exist any more => local caching issue?")>
-    <Test> Public Sub AddFileLinksWithSpecialCenterDeviceBehaviour_Parallelized()
-        Const RemoteTestFolderNameSrc As String = "ZZZ_UnitTest_CenterDevice_TempDir_CopyFiles_Src"
-        Const RemoteTestFolderNameDestCollection As String = "ZZZ_UnitTest_CenterDevice_TempDir_CopyFiles_Dest"
-        Const RemoteTestFolderNameDestFolder1 As String = "ZZZ_UnitTest_CenterDevice_TempDir_CopyFiles_Dest/subfolder1"
-        Const RemoteTestFolderNameDestFolder2 As String = "ZZZ_UnitTest_CenterDevice_TempDir_CopyFiles_Dest/subfolder2"
-
-        Dim CleanupTasks As New ParallelTasksBundle()
-        CleanupTasks.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameSrc, False)))
-        CleanupTasks.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameDestCollection, False)))
-        CleanupTasks.WaitAll()
-
-        Dim CreateDirsLevel1 As New ParallelTasksBundle
-        Dim RemoteTestDirSrc As Task(Of IO.DirectoryInfo) = CleanupTasks.Add(Task.Run(Function() Me.CreateRemoteTestFolderIfNotExisting(RemoteTestFolderNameSrc)))
-        Dim RemoteTestDirDestCollection As Task(Of IO.DirectoryInfo) = CleanupTasks.Add(Task.Run(Function() Me.CreateRemoteTestFolderIfNotExisting(RemoteTestFolderNameDestCollection)))
-        CreateDirsLevel1.WaitAll()
-
-        Dim CreateDirsLevel2 As New ParallelTasksBundle
-        Dim RemoteTestDirDestFolder1 As Task(Of IO.DirectoryInfo) = CleanupTasks.Add(Task.Run(Function() Me.CreateRemoteTestFolderIfNotExisting(RemoteTestFolderNameDestFolder1)))
-        Dim RemoteTestDirDestFolder2 As Task(Of IO.DirectoryInfo) = CleanupTasks.Add(Task.Run(Function() Me.CreateRemoteTestFolderIfNotExisting(RemoteTestFolderNameDestFolder2)))
-        CreateDirsLevel2.WaitAll()
-
-        Dim TestFile1Data As Byte() = New Byte() {55, 56, 32, 42, 13, 10, 44, 48, 50}
-
-        Using TempFileData As New System.IO.MemoryStream(TestFile1Data)
-            RemoteTestDirSrc.Result.UploadAndCreateNewFile(Function() TempFileData, "test-source-file")
-        End Using
-        Dim SrcFile As IO.FileInfo = RemoteTestDirSrc.Result.GetFile("test-source-file")
-
-        Console.WriteLine("RemoteTestDirDestCollection=" & RemoteTestDirDestCollection.Result.FullName)
-        Console.WriteLine("RemoteTestDirDestCollection.CollectionID=" & RemoteTestDirDestCollection.Result.CollectionID)
-        RemoteTestDirDestCollection.Result.AddExistingFile(SrcFile)
-        Dim CopyInDestCollection As IO.FileInfo = RemoteTestDirDestCollection.Result.GetFile("test-source-file")
-        Assert.AreEqual(SrcFile.ID, CopyInDestCollection.ID)
-
-        RemoteTestDirDestFolder1.Result.AddExistingFile(SrcFile)
-        Dim CopyInDestFolder1 As IO.FileInfo = RemoteTestDirDestFolder1.Result.GetFile("test-source-file")
-        Assert.AreEqual(SrcFile.ID, CopyInDestFolder1.ID)
-
-        RemoteTestDirDestFolder2.Result.AddExistingFile(SrcFile)
-        Dim CopyInDestFolder2 As IO.FileInfo = RemoteTestDirDestFolder2.Result.GetFile("test-source-file")
-        Assert.AreEqual(SrcFile.ID, CopyInDestFolder2.ID)
-
-        Assert.AreEqual(SrcFile.ID, RemoteTestDirDestCollection.Result.GetFile("test-source-file").ID)
-        Assert.AreEqual(SrcFile.ID, RemoteTestDirDestFolder1.Result.GetFile("test-source-file").ID)
-        Assert.AreEqual(SrcFile.ID, RemoteTestDirDestFolder2.Result.GetFile("test-source-file").ID)
-
-        RemoteTestDirDestCollection.Result.ResetFilesCache()
-        RemoteTestDirDestFolder1.Result.ResetFilesCache()
-        RemoteTestDirDestFolder2.Result.ResetFilesCache()
-
-        Assert.IsFalse(RemoteTestDirDestCollection.Result.FileExists("test-source-file"))
-        Assert.IsFalse(RemoteTestDirDestFolder1.Result.FileExists("test-source-file"))
-        Assert.IsTrue(RemoteTestDirDestFolder2.Result.FileExists("test-source-file"))
-        Assert.AreEqual(SrcFile.ID, RemoteTestDirDestFolder2.Result.GetFile("test-source-file").ID)
-        Assert.AreEqual(TestFile1Data, StreamToByteArray(RemoteTestDirDestFolder2.Result.GetFile("test-source-file").Download()))
-
-        Dim FinalCleanupTasksLevel1 As New ParallelTasksBundle()
-        Dim FinalCleanupTasksLevel2 As New ParallelTasksBundle()
-        FinalCleanupTasksLevel2.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameSrc, True)))
-        FinalCleanupTasksLevel1.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameDestFolder1, True)))
-        FinalCleanupTasksLevel1.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameDestFolder2, True)))
-        FinalCleanupTasksLevel1.WaitAll()
-        FinalCleanupTasksLevel2.Add(Task.Run(Sub() Me.RemoveRemoteTestFolder(RemoteTestFolderNameDestCollection, True)))
-        FinalCleanupTasksLevel2.WaitAll()
-    End Sub
+    'The parallelized regression was moved to DocumentVersionBridgeTests in
+    'CenterDevice.Rest.TeamworkIntegrationTests. Its explicit exclusive-window gate,
+    'owned-resource journal and finally cleanup replace this unsafe fixed-path fixture.
 
     ''' <summary>
     ''' Move a file from a first collection/folder to another one (WARNING: special CenterDevice behaviour: moving a file from a 1st collection to a 2nd collection will automatically remove any links in 2nd collection which might already exist in one of the folders of 2nd collection)
