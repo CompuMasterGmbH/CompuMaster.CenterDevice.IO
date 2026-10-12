@@ -132,6 +132,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             var collections = await Collections(token);
             var confirmed = new Dictionary<ParallelScope, Collection>();
             var foldersByScope = new Dictionary<ParallelScope, List<Folder>>();
+            var documents = new List<DocumentFullMetadata>();
             foreach (var scope in owned.Scopes)
             {
                 Check(scope.Name != null && scope.Name.StartsWith(Prefix, StringComparison.Ordinal) && Guid.TryParseExact(scope.Name.Substring(Prefix.Length), "N", out _),
@@ -150,10 +151,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     "Unexpected or incomplete document contents prevent cleanup.");
                 foreach (var document in page.Documents)
                 {
-                    Check(document.Owner == ownerId && document.Filename == owned.Filename, "Only the fixture's owned document may be removed.");
-                    Check(document.Collections?.Visible != null && document.Collections.Visible.All(id => owned.Scopes.Any(candidate => candidate.Id == id || candidate.Name == collections.FirstOrDefault(c => c.Id == id)?.Name)),
+                    Check(document.Owner == ownerId && document.Filename == owned.Filename && !document.IsShared, "Only the fixture's private owned document may be removed.");
+                    Check(document.Collections?.Visible != null && document.Collections.NotVisibleCount == 0 && document.Collections.Visible.All(id => owned.Scopes.Any(candidate => candidate.Id == id || candidate.Name == collections.FirstOrDefault(c => c.Id == id)?.Name)),
                         "The fixture document must not have references outside the recorded owned collections.");
                     if (!owned.Documents.Contains(document.Id)) owned.Documents.Add(document.Id);
+                    documents.Add(document);
                 }
                 var folders = (await client.Folders.GetFoldersAsync(contextId, scope.Id, RestApiConstants.NONE, null, null,
                     new[] { "id", "name", "parent", "collection", "users", "groups", "link" }, token)).Folders;
@@ -170,6 +172,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 }
                 foldersByScope.Add(scope, folders);
             }
+            var ownedFolderIds = new HashSet<string>(foldersByScope.Values.SelectMany(folders => folders).Select(folder => folder.Id));
+            Check(documents.All(document => document.Folders != null && document.Folders.All(id => ownedFolderIds.Contains(id))),
+                "Owned document folder references must not escape the completely verified scopes.");
             SaveParallelLedger(owned); // All scopes are validated before a global document erase can affect either reference.
             cleanupPhase = "owned parallel folder removal";
             foreach (var scope in confirmed.Keys)
