@@ -18,8 +18,11 @@ namespace CenterDevice.Rest.Clients.Folders
         public List<string> Path { get; set; }
 
         public List<Folder> SubFolders { get; set; }
+        [JsonInclude]
         [JsonPropertyName(RestApiConstants.HAS_SUBFOLDERS)]
         private bool? HasSubFoldersServerInfo { get; set; }
+        /// <summary>Indicates whether child folders exist when their existence is known.</summary>
+        /// <remarks>A fetched child list takes precedence over server existence metadata. Returns null when neither is available; requesting existence metadata does not fetch the children.</remarks>
         public bool? HasSubFolders
         {
             get
