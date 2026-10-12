@@ -175,6 +175,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             Check(documents.All(document => document.Folders != null && document.Folders.All(id => ownedFolderIds.Contains(id))),
                 "Owned document folder references must not escape the completely verified scopes.");
             SaveParallelLedger(owned); // All scopes are validated before a global document erase can affect either reference.
+            cleanupPhase = "verified owned document removal";
+            foreach (var id in documents.Select(document => document.Id).Distinct())
+                await client.Document.DeleteDocumentAsync(contextId, id, token);
             cleanupPhase = "owned parallel folder removal";
             foreach (var scope in confirmed.Keys)
             {
