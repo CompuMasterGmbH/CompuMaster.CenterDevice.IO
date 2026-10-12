@@ -71,6 +71,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for upload-email endpoints created by the authenticated caller.</summary>
         public Rest.Clients.UploadEmails.UploadEmailsRestClient UploadEmails => new Rest.Clients.UploadEmails.UploadEmailsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for SFTP upload endpoints created by the authenticated caller.</summary>
+        public Rest.Clients.UploadSftps.UploadSftpsRestClient UploadSftps => new Rest.Clients.UploadSftps.UploadSftpsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
