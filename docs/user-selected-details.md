@@ -1,0 +1,13 @@
+﻿# Selected user details
+
+`UserRestClient.GetUserDetails` and `GetUserDetailsAsync` add API 2.29 section 5.8.2 coverage without changing existing getters, interfaces or mutable models. Authentication context and explicitly selected user ID remain separate; `current` selects the OAuth token's user. The selected identifier is escaped as one path segment and configured bridge paths/prefixes are retained.
+
+The optional `data` query uses a copied list of individual field names; omission retains the manufacturer default of all. The `tenant` selection returns the field `tenant-name`. Optional `include-deleted` preserves omission versus explicit false/true. Future field strings are sent unchanged and safely encoded. The server decides visibility and whether a deleted profile remains available.
+
+Immutable nullable metadata covers ID, first/last names, email, tenant name/ID, role/status, technical-user, encoded picture, groups and visible collections. Missing or JSON-null fields remain unknown; explicit empty names/arrays, zero colors and false remain distinct. Technical users cannot receive document/collection shares; missing technical-user metadata does not establish sharing permission. Future role/status/encoding strings and original picture data are not normalized or decoded.
+
+Group and collection lists are exposed only for the current user. An absent list is not evidence of no memberships or no visible collections. The all-users group may expose its ID alone without name or color. Collections preserve identity, owner, users, groups and nullable public visibility; ownership/visibility does not imply write permission. Defensive raw metadata copies retain complete intelligent filters, extended metadata and future fields without guessing module/template-specific structure. Mutating a copy cannot change the immutable result.
+
+Projections may omit the user ID; absence does not become the selected ID. A returned ID must agree with an explicitly selected ID (canonical GUID equivalence is accepted); `current` resolves to the original server ID. Successful responses reject malformed known-field shapes, missing nested resource IDs, duplicate JSON keys and trailing content with an inner diagnostic. HTTP failures remain failures. No client-side role filtering, default user/tenant change, speculative follow-up or mutation is performed.
+
+Native cancellation covers authorization/admission/HTTP I/O. Isolated fixtures and private TCP loopback checks do not verify actual role visibility, deleted profiles, direct OAuth or Teamwork behavior; those acceptance criteria remain separate in #20/#15. This batch does not cover settings or change published/default downstream dependencies.
