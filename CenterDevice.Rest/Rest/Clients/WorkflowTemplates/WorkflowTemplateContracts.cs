@@ -67,6 +67,8 @@ namespace CenterDevice.Rest.Clients.WorkflowTemplates
         /// <summary>Constructs a document move to a selected visible folder.</summary>
         /// <inheritdoc cref="MoveToCollection"/>
         /// <param name="folderId">The exact nonblank destination folder.</param>
+        /// <param name="sourceCollectionId">The selected source collection, or null when selecting a source folder.</param>
+        /// <param name="sourceFolderId">The selected source folder, or null when selecting a source collection.</param>
         public static WorkflowFinalizingAction MoveToFolder(string folderId, string sourceCollectionId = null, string sourceFolderId = null) => Move("move-to-folder", "folder", folderId, sourceCollectionId, sourceFolderId);
         /// <summary>Constructs removal of the document from a selected source location.</summary>
         /// <param name="sourceCollectionId">The source collection, or null when selecting a source folder.</param>
