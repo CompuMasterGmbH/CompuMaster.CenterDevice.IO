@@ -759,9 +759,6 @@ Imports CenterDevice.Test.Tools
         Me.RemoveRemoteTestFolder(RemoteTestFolderNameDestCollection, True)
     End Sub
 
-    ''' <summary>
-    ''' A file/document can be referenced in a 1st collection to an origin source in a 2nd collection, but there can't be more than 1 link per collection -> 1st collection can contain (including all sub folders) max. 1 link -> adding a 2nd file link in a folder of 1st collection directly removes the origin 1st link in 1st collection
-    ''' </summary>
     'The parallelized regression was moved to DocumentVersionBridgeTests in
     'CenterDevice.Rest.TeamworkIntegrationTests. Its explicit exclusive-window gate,
     'owned-resource journal and finally cleanup replace this unsafe fixed-path fixture.

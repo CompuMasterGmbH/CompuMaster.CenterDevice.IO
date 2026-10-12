@@ -86,6 +86,14 @@ jobs:
               if: startsWith(matrix.os, 'windows')
               run: dotnet test CenterDevice.Rest.AsyncTests/CenterDevice.Rest.AsyncTests.csproj --framework net48 --configuration=${{env.BUILD_CONFIGURATION}} --results-directory isolated-results-net48 --logger trx
 
+            - name: Run isolated owned-resource cleanup guards - .NET 8.0
+              # Only these guards are isolated; other project fixtures require explicit server opt-in.
+              run: dotnet test CenterDevice.Rest.TeamworkIntegrationTests/CenterDevice.Rest.TeamworkIntegrationTests.csproj --framework net8.0 --filter FullyQualifiedName~ParallelCleanupGuardTests --configuration=${{env.BUILD_CONFIGURATION}} --results-directory cleanup-guards-net8.0 --logger trx
+
+            - name: Run isolated owned-resource cleanup guards - .NET Framework 4.8
+              if: startsWith(matrix.os, 'windows')
+              run: dotnet test CenterDevice.Rest.TeamworkIntegrationTests/CenterDevice.Rest.TeamworkIntegrationTests.csproj --framework net48 --filter FullyQualifiedName~ParallelCleanupGuardTests --configuration=${{env.BUILD_CONFIGURATION}} --results-directory cleanup-guards-net48 --logger trx
+
             - name: Run Unit Tests - .NET 8.0
               run: dotnet test --framework net8.0 --results-directory test-results-net8.0 --logger junit --configuration=${{env.BUILD_CONFIGURATION}} --no-restore
 
