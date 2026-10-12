@@ -28,7 +28,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
 {
     // This project is deliberately outside the solution and default CI suite.
     [TestFixture, NonParallelizable, Category("RemoteDms")]
-    public class DocumentVersionBridgeTests
+    public partial class DocumentVersionBridgeTests
     {
         private const string Prefix = "ZZZ_UnitTests_CenterDevice_API229_Versions_";
         private static readonly string LedgerPath = Path.Combine(Path.GetTempPath(), "CenterDevice.API229.Versions.owned-resources.json");
@@ -37,6 +37,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         private Ledger ledger;
         private DateTimeOffset leaseUntil;
         private string phase;
+        private string cleanupPhase;
         private Exception originalFailure, cleanupFailure;
 
         [TestCase(false), TestCase(true)]
@@ -54,7 +55,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         public async Task TagAndLockCommandsThroughTeamwork(bool synchronous)
             => await RunWithOwnedCollection(synchronous, false, true);
 
-        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false)
+        [Test, Explicit("Requires the same coordinated exclusive window as the owned-resource tests.")]
+        public async Task RecoverOwnedResourcesThroughTeamwork()
+            => await RunWithOwnedCollection(false, false, cleanupOnly: true);
+
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -83,6 +88,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                         ledger = JsonSerializer.Deserialize<Ledger>(File.ReadAllText(LedgerPath));
                         await Cleanup(timeout.Token);
                     }
+                    if (!cleanupOnly)
+                    {
                     phase = "setup";
                     ledger = new Ledger { Name = Prefix + Guid.NewGuid().ToString("N"), Owner = ownerId };
                     SaveLedger(); // Record intent before a potentially ambiguous create.
@@ -92,9 +99,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
                     phase = synchronous ? "sync document operations" : "async document operations";
-                    if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
+                    if (copyAndMove) await VerifyCopyAndMove(synchronous, timeout.Token);
+                    else if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
                     else if (representations) await VerifyRepresentations(synchronous, timeout.Token);
                     else await VerifyVersions(synchronous, timeout.Token);
+                    }
                 }
                 catch (Exception error) { originalFailure = error; }
                 finally
@@ -111,8 +120,11 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 // Do not let NUnit print provider messages, headers, token bodies or credentials.
                 // Retain both exceptions in memory; report separate sanitized diagnostics.
                 if (originalFailure != null || cleanupFailure != null)
-                    Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup: " + Diagnostic(cleanupFailure));
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (tagsAndLocks
+                    Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup phase: " + cleanupPhase + "; cleanup: " + Diagnostic(cleanupFailure));
+                if (cleanupOnly) { TestContext.Out.WriteLine("Owned resource recovery and ledger absence verified."); return; }
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (copyAndMove
+                    ? ": single/bulk and recursive/flat directory copies, new identities, source/history/payload preservation, file moves, cancellation and complete cleanup verified."
+                    : tagsAndLocks
                     ? ": selected/bulk tags, exact partial failures, owner lock/unlock, cancellation and complete cleanup verified."
                     : representations
                     ? ": selected historical/current fulltext and ZIP contents verified; PDF/preview/unsupported MP4 outcomes recorded; cancellation and complete cleanup verified."
@@ -518,10 +530,12 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
 
         private async Task Cleanup(CancellationToken token)
         {
+            cleanupPhase = "scope validation";
             CheckLease(false);
             Check(ledger != null && ledger.Name != null && ledger.Name.StartsWith(Prefix, StringComparison.Ordinal) &&
                 Guid.TryParseExact(ledger.Name.Substring(Prefix.Length), "N", out _) && ledger.Owner == ownerId,
                 "Recovery ledger must identify this fixture's exact owned scope.");
+            cleanupPhase = "collection lookup";
             var matches = (await Collections(token)).Where(c => c.Name == ledger.Name).ToList();
             Check(matches.Count <= 1, "Ambiguous collection identity prevents cleanup.");
             if (matches.Count == 1)
@@ -529,21 +543,28 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 Check(ledger.Id == null || ledger.Id == matches[0].Id, "Collection ID must agree with recorded intent.");
                 ledger.Id = matches[0].Id;
                 SaveLedger();
+                cleanupPhase = "collection ownership";
                 await VerifyCollection(token);
-                var docs = (await client.Documents.GetAsync<DocumentFullMetadata>(contextId, ledger.Id, null, null, 0, 500, token)).Documents;
-                Check(docs != null && docs.Count <= 1, "Unexpected collection contents prevent cleanup.");
+                cleanupPhase = "document inventory";
+                var page = await client.Documents.GetAsync<DocumentFullMetadata>(contextId, ledger.Id, null, null, 0, 500, token);
+                var docs = page?.Documents;
+                Check(docs != null && page.Hits == docs.Count && docs.Count <= (ledger.AllowedFilenames.Count == 0 ? 1 : 12), "Unexpected or incomplete collection contents prevent cleanup.");
                 foreach (var doc in docs)
                 {
-                    Check(doc.Owner == ownerId && doc.Filename == ledger.Filename, "Only this fixture's owned document may be removed.");
+                    Check(doc.Owner == ownerId && OwnedFilename(doc.Filename), "Only this fixture's owned document may be removed.");
                     if (!ledger.Documents.Contains(doc.Id)) ledger.Documents.Add(doc.Id);
                 }
                 SaveLedger();
+                cleanupPhase = "folder inventory and removal";
+                await CleanupOwnedFolders(token);
+                cleanupPhase = "collection removal";
                 await client.Collection.EraseCollectionAsync(contextId, ledger.Id, true, token);
             }
             Check(!(await Collections(token)).Any(c => c.Name == ledger.Name || c.Id == ledger.Id), "Collection removal must be verified.");
+            cleanupPhase = "trash inventory";
             var trash = await client.Trash.List(contextId, token);
             var ownedTrash = trash.Where(d => ledger.Documents.Contains(d.Id)).ToList();
-            Check(ownedTrash.All(d => d.Filename == ledger.Filename), "Trash identity must agree with the owned ledger.");
+            Check(ownedTrash.All(d => OwnedFilename(d.Filename)), "Trash identity must agree with the owned ledger.");
             if (ownedTrash.Count != 0)
                 await client.Trash.Erase(contextId, ownedTrash.Select(d => d.Id).ToArray(), token);
             Check(!(await client.Trash.List(contextId, token)).Any(d => ledger.Documents.Contains(d.Id)), "Test documents must be absent from trash.");
@@ -554,6 +575,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 catch (NotFoundException) { absent = true; }
                 Check(absent, "Test document must be absent from active metadata.");
             }
+            cleanupPhase = "ledger removal";
             File.Delete(LedgerPath);
             ledger = null;
         }
@@ -589,6 +611,15 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         private static string Diagnostic(Exception error)
         {
             if (error == null) return "none";
+            if (error is HttpRequestException http)
+            {
+                var kind = typeof(HttpRequestException).GetProperty("HttpRequestError")?.GetValue(http)?.ToString() ?? "unspecified";
+                var httpStatus = typeof(HttpRequestException).GetProperty("StatusCode")?.GetValue(http)?.ToString() ?? "absent";
+                var frames = new System.Diagnostics.StackTrace(http, false).GetFrames()?.Take(4).Select(frame => frame.GetMethod()?.DeclaringType?.Name + "." + frame.GetMethod()?.Name);
+                var reason = new[] { "response ended prematurely", "invalid request URI", "Name or service not known", "No such host", "invalid header", "Error while copying content", "HTTP/2" }
+                    .FirstOrDefault(text => (http.Message ?? "").IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0);
+                return "HttpRequestException (" + kind + "; status " + httpStatus + (reason == null ? "" : "; " + reason) + "; methods " + string.Join(",", frames ?? new string[0]) + ")" + (http.InnerException == null ? "" : " [" + Diagnostic(http.InnerException) + "]");
+            }
             if (error is AggregateException aggregate) return "AggregateException [" + string.Join("; ", aggregate.InnerExceptions.Select(Diagnostic)) + "]";
             if (error is VerificationFailure) return error.Message;
             if (error is InvalidResponseDataException && error.InnerException is InvalidDataException invalid)
@@ -596,7 +627,10 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 var media = System.Text.RegularExpressions.Regex.Match(invalid.Message, @"received ([a-zA-Z0-9!#$&^_.+-]+/[a-zA-Z0-9!#$&^_.+-]+)");
                 if (media.Success) return "InvalidResponseDataException (media type " + media.Groups[1].Value + ")";
             }
-            return error.GetType().Name + (error is RestClientException rest && rest.ErrorResponse != null ? " (code " + rest.ErrorResponse.Code + ")" : "");
+            var status = System.Text.RegularExpressions.Regex.Match(error.Message ?? "", "but got \"([A-Za-z]+)\"");
+            var statusText = status.Success && Enum.TryParse(status.Groups[1].Value, out HttpStatusCode code) ? " (HTTP " + (int)code + ")" : "";
+            return error.GetType().Name + statusText + (error is RestClientException rest && rest.ErrorResponse != null ? " (code " + rest.ErrorResponse.Code + ")" : "")
+                + (error.InnerException == null ? "" : " [" + Diagnostic(error.InnerException) + "]");
         }
         private sealed class VerificationFailure : Exception { internal VerificationFailure(string message) : base(message) { } }
         public sealed class Ledger
@@ -606,6 +640,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             public string Owner { get; set; }
             public string Filename { get; set; }
             public List<string> Documents { get; set; } = new List<string>();
+            public List<string> AllowedFilenames { get; set; } = new List<string>();
+            public List<string> AllowedFolderPaths { get; set; } = new List<string>();
+            public Dictionary<string, string> FolderIds { get; set; } = new Dictionary<string, string>();
         }
         private sealed class BridgeClient : TeamworkRestClient
         {

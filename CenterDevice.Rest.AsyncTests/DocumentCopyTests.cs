@@ -112,7 +112,7 @@ namespace CenterDevice.Rest.AsyncTests
             {
                 var documents = (JArray)parameters["documents"];
                 Assert.That(documents.Count, Is.EqualTo(2));
-                Assert.That(documents.Select(d => (string)d["document-id"]), Is.EqualTo(new[] { "source", "source" }), "Repeated sources are separate copy selections.");
+                Assert.That(documents.Select(d => (string)d["document-id"]), Is.EqualTo(new[] { "source", "source-second" }));
                 Assert.That(documents.Select(d => (string)d["filename"]), Is.EqualTo(new[] { "first ü.txt", "second.txt" }));
                 Assert.That(documents.All(d => ((JObject)d).Count == 2), Is.True, "No source metadata or sharing is inherited by the request.");
             }
@@ -226,7 +226,46 @@ namespace CenterDevice.Rest.AsyncTests
             Assert.That(state.Calls, Is.EqualTo(1));
         }
 
-        private static DocumentCopyRequest[] Selections() => new[] { new DocumentCopyRequest("source", "first ü.txt"), new DocumentCopyRequest("source", "second.txt") };
+        [TestCase(false), TestCase(true)]
+        public async Task RepeatedCanonicalSourceIdsAreCopiedInSeparateSequentialBatches(bool sync)
+        {
+            var state = new State { Bulk = true, JsonSequence = new[] { "{\"documents\":[\"new-1\",\"new-2\"]}", "{\"documents\":[\"new-3\",\"new-4\"]}" } };
+            var selections = new[] {
+                new DocumentCopyRequest("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "a.txt"), new DocumentCopyRequest("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", "b.txt"),
+                new DocumentCopyRequest("second", "c.txt"), new DocumentCopyRequest("second", "d.txt") };
+            var client = new BulkClient(state);
+            var result = sync ? client.CopyDocuments("context", selections, folderId: "target") : await client.CopyDocumentsAsync("context", selections, folderId: "target");
+            Assert.That(result, Is.EqualTo(new[] { "new-1", "new-2", "new-3", "new-4" }));
+            Assert.That(state.Calls, Is.EqualTo(2));
+            Assert.That(state.JsonBodies.Select(body => JObject.Parse(body)["params"]["documents"].Select(d => (string)d["filename"]).ToArray()),
+                Is.EqualTo(new[] { new[] { "a.txt", "c.txt" }, new[] { "b.txt", "d.txt" } }));
+            Assert.That(state.JsonBodies.All(body => (string)JObject.Parse(body)["params"]["folder"] == "target"), Is.True);
+        }
+
+        [TestCase("incomplete"), TestCase("earlier-id"), TestCase("later-source-id")]
+        public void InvalidBatchResultsStopBeforeAnyLaterCopyAndDoNotReplay(string problem)
+        {
+            var state = new State { Bulk = true, JsonSequence = new[] { "{\"documents\":[\"new-1\"]}", "{\"documents\":[\"new-1\"]}" } };
+            var selections = new[] { new DocumentCopyRequest("source", "a.txt"), new DocumentCopyRequest("source", "b.txt"), new DocumentCopyRequest("source", "c.txt") };
+            if (problem == "incomplete") { selections = Selections(); state.JsonSequence[0] = "{\"documents\":[\"new-1\"]}"; }
+            if (problem == "later-source-id") { selections[1] = new DocumentCopyRequest("other", "b.txt"); state.JsonSequence[0] = "{\"documents\":[\"other\",\"new-1\"]}"; }
+            Assert.ThrowsAsync<InvalidResponseDataException>((Func<Task>)(async () => { await new BulkClient(state).CopyDocumentsAsync("context", selections); }));
+            Assert.That(state.Calls, Is.EqualTo(problem == "earlier-id" ? 2 : 1));
+        }
+
+        [Test]
+        public void CancellationAfterAConfirmedBatchDoesNotSendTheNextBatch()
+        {
+            using (var cancellation = new CancellationTokenSource())
+            {
+                var state = new State { Bulk = true, JsonSequence = new[] { "{\"documents\":[\"new-1\"]}" }, AfterSend = cancellation.Cancel };
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await new BulkClient(state).CopyDocumentsAsync("context",
+                    new[] { new DocumentCopyRequest("source", "a.txt"), new DocumentCopyRequest("source", "b.txt") }, cancellationToken: cancellation.Token); }));
+                Assert.That(state.Calls, Is.EqualTo(1));
+            }
+        }
+
+        private static DocumentCopyRequest[] Selections() => new[] { new DocumentCopyRequest("source", "first ü.txt"), new DocumentCopyRequest("source-second", "second.txt") };
         private static async Task<string[]> Invoke(State state, bool bulk, bool sync = false, string collectionId = null, string folderId = null, CancellationToken token = default(CancellationToken))
         {
             if (bulk)
@@ -262,11 +301,14 @@ namespace CenterDevice.Rest.AsyncTests
         {
             internal bool Bulk, Pending;
             internal string Json, JsonOverride, UserId;
+            internal string[] JsonSequence;
+            internal readonly List<string> JsonBodies = new List<string>();
             internal HttpStatusCode? StatusOverride;
             internal Exception Error;
             internal RestRequest Request;
             internal int Calls, AuthorizationCalls;
             internal Action BeforeAuthorize;
+            internal Action AfterSend;
             internal CancellationToken Token, AuthorizationToken;
             internal readonly TaskCompletionSource<bool> Entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             public OAuthInfo GetOAuthInfo(string userId) => throw new AssertionException("Native async authorization is required.");
@@ -280,10 +322,12 @@ namespace CenterDevice.Rest.AsyncTests
                 Calls++; Request = request; Token = token; UserId = info.UserId;
                 var body = request.Parameters.OfType<BodyParameter>().Single();
                 Json = body.Value is string text ? text : new SystemTextJsonSerializer().Serialize(body.Value);
+                JsonBodies.Add(Json);
                 Entered.TrySetResult(true);
                 if (Pending) await Task.Delay(Timeout.Infinite, token);
+                AfterSend?.Invoke();
                 return new RestResponse(request) { StatusCode = StatusOverride ?? (Bulk ? HttpStatusCode.OK : HttpStatusCode.Created), ErrorException = Error,
-                    Content = JsonOverride ?? (Bulk ? "{\"documents\":[\"new-second\",\"new-first\"]}" : "{\"id\":\"new-first\"}") };
+                    Content = JsonSequence == null ? JsonOverride ?? (Bulk ? "{\"documents\":[\"new-second\",\"new-first\"]}" : "{\"id\":\"new-first\"}") : JsonSequence[Calls - 1] };
             }
         }
     }

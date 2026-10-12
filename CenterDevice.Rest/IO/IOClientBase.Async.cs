@@ -1,4 +1,5 @@
 ﻿using CenterDevice.Rest.Clients.Collections;
+using CenterDevice.Rest.Clients.Documents;
 using CenterDevice.Rest.Clients.Documents.Metadata;
 using CenterDevice.Rest.Clients.Folders;
 using System.Collections.Generic;
@@ -112,6 +113,18 @@ namespace CenterDevice.IO
             return (await ApiClient.Documents.GetAsync<DocumentFullMetadata>(CurrentAuthenticationContextUserID, collectionId, null,
                 parentFolderId, 0, int.MaxValue, cancellationToken).ConfigureAwait(false)).Documents;
         }
+
+        /// <summary>Retrieves one page of immediate documents for complete directory copy planning.</summary>
+        /// <param name="collectionId">The collection identifier, or null for a nested folder.</param>
+        /// <param name="parentFolderId">The parent folder identifier, or the root-folder marker within a collection.</param>
+        /// <param name="offset">The zero-based position of the first requested document.</param>
+        /// <param name="rows">The requested page size, at most 500.</param>
+        /// <param name="cancellationToken">Cancels request admission and active HTTP I/O.</param>
+        /// <returns>The document page and the total number of matching documents.</returns>
+        /// <remarks>Overrides must retain the total hit count and must not silently truncate the listing.</remarks>
+        protected internal virtual Task<DocumentSearchResults<DocumentFullMetadata>> LookupChildDocumentPageAsync(string collectionId, string parentFolderId, int offset, int rows, CancellationToken cancellationToken)
+            => ApiClient.Documents.GetAsync<DocumentFullMetadata>(CurrentAuthenticationContextUserID, collectionId, null,
+                parentFolderId, offset, rows, cancellationToken);
 
         /// <summary>Retrieves link details using cancellable asynchronous HTTP I/O.</summary>
         /// <param name="linkId">The link identifier.</param>

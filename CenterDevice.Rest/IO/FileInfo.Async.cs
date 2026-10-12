@@ -76,19 +76,20 @@ namespace CenterDevice.IO
         }
 
         /// <summary>Moves this document to another directory using cancellable asynchronous HTTP I/O.</summary>
-        /// <param name="targetDirectory">The target collection or folder.</param>
+        /// <param name="targetDirectory">The target collection or folder using the same REST client and authenticated context.</param>
         /// <param name="cancellationToken">Cancels admission and active HTTP I/O.</param>
         /// <returns>A task representing the move and local parent/cache update.</returns>
-        /// <exception cref="NotSupportedException">The target is the root directory.</exception>
+        /// <remarks>Retains document identity. Both file listings are invalidated after success or uncertain failure; the local parent changes only after server confirmation. Requests are not automatically replayed and cancellation does not establish whether a submitted move committed.</remarks>
+        /// <exception cref="NotSupportedException">The target is the root directory or belongs to another authenticated instance.</exception>
         public async Task MoveAsync(DirectoryInfo targetDirectory, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (targetDirectory == null) throw new ArgumentNullException(nameof(targetDirectory));
             if (targetDirectory.IsRootDirectory) throw new NotSupportedException("Moving a file into root directory is not supported");
+            targetDirectory.EnsureSameResourceContext(ioClient);
             try
             {
-                await ioClient.ApiClient.Documents.MoveDocumentsAsync(ioClient.CurrentAuthenticationContextUserID, new[] { ID },
-                    ParentDirectory.AssociatedCollection.CollectionID, parentDirectory.FolderID,
-                    targetDirectory.AssociatedCollection.CollectionID, targetDirectory.FolderID, cancellationToken).ConfigureAwait(false);
+                await MoveCoreAsync(targetDirectory, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -97,5 +98,15 @@ namespace CenterDevice.IO
             }
             parentDirectory = targetDirectory;
         }
+
+        /// <summary>Moves the selected document through the native server command.</summary>
+        /// <param name="targetDirectory">The validated target collection or folder.</param>
+        /// <param name="cancellationToken">Cancels authorization, admission and HTTP I/O.</param>
+        /// <returns>A task completed after the server confirms the move.</returns>
+        /// <remarks>The caller handles cache invalidation and local parent publication. Overrides must preserve the document ID and must not replay uncertain writes.</remarks>
+        protected virtual Task MoveCoreAsync(DirectoryInfo targetDirectory, CancellationToken cancellationToken)
+            => ioClient.ApiClient.Documents.MoveDocumentsAsync(ioClient.CurrentAuthenticationContextUserID, new[] { ID },
+                ParentDirectory.AssociatedCollection.CollectionID, parentDirectory.FolderID,
+                targetDirectory.AssociatedCollection.CollectionID, targetDirectory.FolderID, cancellationToken);
     }
 }

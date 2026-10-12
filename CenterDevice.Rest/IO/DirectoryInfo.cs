@@ -46,25 +46,21 @@ namespace CenterDevice.IO
             this.restCollection = null;
         }
 
-        /// <summary>
-        /// Copy a file (WARNING: limited to file sizes &lt; 2 GB, downloads + re-uploads file data)
-        /// </summary>
-        /// <param name="source"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <summary>Copies a directory and its visible contents, preserving the source name.</summary>
+        /// <param name="source">The source collection or folder in the same authenticated instance.</param>
+        /// <remarks>Includes subdirectories. Copies are new documents without inherited sharing or metadata; a partial failure leaves created destination resources for reconciliation.</remarks>
         public void AddCopy(DirectoryInfo source)
         {
-            this.AddCopy(source, source.Name);
+            AddDirectoryCopyAsync(source).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        /// <summary>
-        /// Copy a file (WARNING: limited to file sizes &lt; 2 GB, downloads + re-uploads file data)
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="newDirName">The name of the new subdirectory</param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <summary>Copies a directory and its visible contents under a new name.</summary>
+        /// <param name="source">The source collection or folder in the same authenticated instance.</param>
+        /// <param name="newDirName">The new immediate child name.</param>
+        /// <inheritdoc cref="AddDirectoryCopyAsync"/>
         public void AddCopy(DirectoryInfo source, string newDirName)
         {
-            throw new NotImplementedException();
+            AddDirectoryCopyAsync(source, newDirName).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
