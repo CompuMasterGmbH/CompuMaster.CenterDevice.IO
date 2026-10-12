@@ -1,0 +1,9 @@
+﻿# Immutable document metadata
+
+GetDocumentDetails and its native asynchronous form implement API 2.29 section 5.2.20 alongside unchanged legacy getters/models/interfaces. The explicitly selected escaped ID and optional positive version matrix parameter are retained. Individual includes/excludes are copied before authorization; they are mutually exclusive and base cannot be excluded. Omission preserves server default metadata/current version. The ID is required unless explicitly excluded; a supplied identity or selected version must match the request.
+
+DocumentDetails preserves unknown versus known empty/zero metadata, hidden owner/uploader placeholders, visible user/group/collection lists and hidden counts, original lock names/owner, per-collection archive dates and visible version details. Original dates retain timezone offsets without conversion or document-date fallback. Integer values remain original text without narrowing manufacturer-unspecified widths. Representation yes/no/supported/future values are preserved; supported does not mean ready. No permissions, complete guest history, absent locks or representation polling are inferred.
+
+Complete extended metadata namespaces, indirect sharings, future fields and explicit null remain intact. JSON accessors return defensive copies; lists and nested details are immutable. GET metadata reflects current server state independently of search-index delay. Malformed known structures, duplicate fields, trailing content and mismatched selections retain original inner diagnostics. Native cancellation reaches authorization and HTTP I/O; original errors remain server-authoritative.
+
+Isolated fixtures verify snapshots, identity/version/projection, original dates/catalogs/hidden values, zero/unknown, immutable copies, errors and cancellation. Actual role/history/representation/archive disclosure, coordinated cleanup, publication and downstream adoption remain separate in #18/#15.
