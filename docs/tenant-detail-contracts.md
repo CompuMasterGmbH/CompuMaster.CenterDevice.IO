@@ -1,0 +1,13 @@
+﻿# Tenant detail, login listing and feature metadata
+
+Additive concrete-client sync/native asynchronous methods cover API 2.29 sections 5.12.2, 5.12.3 and 5.14.1. Existing getters, models, activation operations, default preferences and explicit instance selection remain unchanged.
+
+`TenantRestClient.GetTenantDetails` retrieves an explicitly selected tenant or `current`, with optional copied individual `data` selections (default all). Nullable metadata retains original ID/name/status/cancelled and encoded logo. An omitted ID remains unknown; when returned, it must identify the explicitly selected tenant, accepting canonical GUID equivalence. `current` resolves the server's original ID. Logo bytes/encoding are neither decoded nor converted.
+
+`TenantsRestClient.GetLoginTenantsDetails` lists tenants associated with the OAuth token's login, with optional tenants/default-tenant-id/all projections. Results preserve server order, nullable list versus explicit empty list, nullable expired/cancelled flags and each tenant's original associated-user identity, email, hyphenated names, role and status. Future role/status values and complete raw fields remain available. The login default preference does not switch the OAuth token or active client instance. A projected default need not appear in a projected tenant list; no speculative reconciliation or authentication change occurs.
+
+`TenantFeaturesRestClient.GetTenantFeaturesDetails` retains original caller-visible status strings and future feature names/values. Missing/null metadata remains unknown. An administrator can see available-but-inactive features; other callers see those as not-available. Consequently this result does not infer global feature availability, activation rights or actual role permissions. Archiving/auditing convenience properties do not replace the complete immutable status map.
+
+Known field kinds and nested resource identities are checked; duplicate JSON properties and trailing content fail with an inner diagnostic. Original unknown metadata/date-like strings, explicit false/empty values and future catalog strings remain intact in defensive copies. GET requires HTTP 200; other statuses do not become empty successful metadata. Native cancellation covers authorization/admission/HTTP I/O, without speculative follow-up or mutation.
+
+Isolated fixtures/private TCP loopback checks do not establish actual tenant/login visibility, subscription state, feature-role masking or direct OAuth/Teamwork acceptance. Those checks remain separate in #20/#15, along with remaining tenant settings contracts, publication and exact downstream adoption.
