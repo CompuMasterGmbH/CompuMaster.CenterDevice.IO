@@ -212,8 +212,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
 
         private static void SaveParallelLedger(ParallelLedger owned) => File.WriteAllText(ParallelLedgerPath, JsonSerializer.Serialize(owned), new UTF8Encoding(true));
         internal static void RequireOwnedCollectionReferences(DocumentFullMetadata document, string currentScopeId, IReadOnlyCollection<string> ownedScopeIds)
-            => Check(document?.Collections?.Visible != null && document.Collections.NotVisibleCount == 0 && document.Collections.Visible.Contains(currentScopeId) &&
-                document.Collections.Visible.All(id => ownedScopeIds.Contains(id)), "The fixture document must contain its current scope and must not have hidden or external collection references.");
+            => Check(document != null && Guid.TryParse(document.Id, out _) && document.Collections?.Visible != null && document.Collections.NotVisibleCount == 0 && document.Collections.Visible.Contains(currentScopeId) &&
+                document.Collections.Visible.All(id => ownedScopeIds.Contains(id)), "The fixture document must have a usable UUID, contain its current scope and have no hidden or external collection references.");
         public sealed class ParallelLedger
         {
             public string Owner { get; set; }
