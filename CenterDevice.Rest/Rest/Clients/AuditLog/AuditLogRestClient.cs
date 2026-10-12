@@ -55,7 +55,7 @@ namespace CenterDevice.Rest.Clients.AuditLog
         /// <summary>Retrieves the next logical page using asynchronous HTTP I/O.</summary>
         /// <inheritdoc cref="SearchAsync"/>
         /// <returns>A read-only page in logical event order, excluding the specified previous event.</returns>
-        /// <remarks>Requires an audited visible collection. Missing PreviousId starts a new scroll; pass the last returned ID unchanged for the next page. Specify a known page size and stop on a smaller page. No timestamp sorting, cursor fallback, automatic iteration or inferred auditing is performed. Unknown cursor errors remain server errors; existing token refresh is preserved.</remarks>
+        /// <remarks>Requires an audited visible collection. Missing PreviousId starts a new scroll; pass the last returned ID unchanged for the next page. With explicit Rows, compare page length to the effective size Math.Min(Rows, 1000); a smaller page ends the scroll. Omitted Rows uses an unknown server default, so no termination threshold is inferred. No timestamp sorting, cursor fallback, automatic iteration or inferred auditing is performed. Unknown cursor errors remain server errors; existing token refresh is preserved.</remarks>
         public Task<IReadOnlyList<AuditLogEntry>> ScrollAsync(string userId, string collectionId, AuditLogScrollRequest request, CancellationToken cancellationToken = default(CancellationToken))
             => ExecutePageAsync(userId, collectionId, "scroll", request, cancellationToken);
 
