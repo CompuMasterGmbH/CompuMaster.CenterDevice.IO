@@ -27,6 +27,7 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <exception cref="ArgumentNullException">The document sequence is null.</exception>
         /// <exception cref="ArgumentException">The sequence is empty, contains a null selection, or destination arguments are invalid.</exception>
         /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
+        /// <exception cref="InvalidResponseDataException">A command returns incomplete, duplicated or source-reusing copy identifiers.</exception>
         public async Task<IReadOnlyList<string>> CopyDocumentsAsync(string userId, IEnumerable<DocumentCopyRequest> documents, string collectionId = null, string folderId = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();

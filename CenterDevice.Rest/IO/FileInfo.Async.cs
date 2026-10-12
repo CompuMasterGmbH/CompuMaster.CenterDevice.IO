@@ -80,6 +80,7 @@ namespace CenterDevice.IO
         /// <param name="cancellationToken">Cancels admission and active HTTP I/O.</param>
         /// <returns>A task representing the move and local parent/cache update.</returns>
         /// <remarks>Retains document identity. Both file listings are invalidated after success or uncertain failure; the local parent changes only after server confirmation. Requests are not automatically replayed and cancellation does not establish whether a submitted move committed.</remarks>
+        /// <exception cref="ArgumentNullException">The target directory is null.</exception>
         /// <exception cref="NotSupportedException">The target is the root directory or belongs to another authenticated instance.</exception>
         public async Task MoveAsync(DirectoryInfo targetDirectory, CancellationToken cancellationToken = default(CancellationToken))
         {

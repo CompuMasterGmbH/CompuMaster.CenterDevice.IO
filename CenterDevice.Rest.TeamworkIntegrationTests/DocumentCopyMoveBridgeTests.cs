@@ -28,7 +28,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             var nameB = "copy-b-" + suffix + ".txt";
             var singleName = "single-" + suffix + ".txt";
             var bulkNames = new[] { "bulk-one-" + suffix + ".txt", "bulk-two-" + suffix + ".txt" };
-            ledger.AllowedFilenames.AddRange(new[] { nameA, nameB, singleName }.Concat(bulkNames));
+            var duplicateNames = new[] { "duplicate-one-" + suffix + ".txt", "duplicate-two-" + suffix + ".txt" };
+            ledger.AllowedFilenames.AddRange(new[] { nameA, nameB, singleName }.Concat(bulkNames).Concat(duplicateNames));
             ledger.AllowedFolderPaths.AddRange(new[] { "Source", "Source/Child", "Source/Empty", "Target", "Target/Recursive", "Target/Recursive/Child", "Target/Recursive/Empty", "Target/Flat" });
             SaveLedger(); // Names and paths permit recovery even after an ambiguous creation/copy.
             var io = new TeamworkIOClient(client);
@@ -52,16 +53,31 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
 
             phase = "bulk document server copy";
             CheckLease();
-            var selections = bulkNames.Select(name => new DocumentCopyRequest(originalA, name)).ToArray();
+            var selections = new[] { new DocumentCopyRequest(originalA, bulkNames[0]), new DocumentCopyRequest(originalB, bulkNames[1]) };
             var bulk = sync ? client.Documents.CopyDocuments(contextId, selections, folderId: target.FolderID, cancellationToken: token)
                 : await client.Documents.CopyDocumentsAsync(contextId, selections, folderId: target.FolderID, cancellationToken: token);
             RecordCopyIds(bulk);
             TestContext.Out.WriteLine("Bulk response count: " + bulk.Count + ".");
-            Check(bulk.Count == 2 && bulk.Distinct().Count() == 2, "Repeated source selections must create distinct documents.");
+            Check(bulk.Count == 2 && bulk.Distinct().Count() == 2, "Bulk selections must create distinct documents.");
             foreach (var id in bulk)
             {
                 var metadata = await client.Document.GetDocumentMetadataAsync(contextId, id, token);
                 Check(bulkNames.Contains(metadata.Filename), "Bulk results must match an intended name without assuming result mapping.");
+                await VerifyOwnedCopy(id, metadata.Filename == bulkNames[0] ? originalA : originalB, metadata.Filename,
+                    metadata.Filename == bulkNames[0] ? "latest" : "child-payload", token);
+            }
+
+            phase = "repeated-source document server copy";
+            CheckLease();
+            selections = duplicateNames.Select(name => new DocumentCopyRequest(originalA, name)).ToArray();
+            var duplicates = sync ? client.Documents.CopyDocuments(contextId, selections, folderId: target.FolderID, cancellationToken: token)
+                : await client.Documents.CopyDocumentsAsync(contextId, selections, folderId: target.FolderID, cancellationToken: token);
+            RecordCopyIds(duplicates);
+            Check(duplicates.Count == 2 && duplicates.Distinct().Count() == 2, "Repeated source selections must create distinct documents through separate batches.");
+            foreach (var id in duplicates)
+            {
+                var metadata = await client.Document.GetDocumentMetadataAsync(contextId, id, token);
+                Check(duplicateNames.Contains(metadata.Filename), "Repeated-source copies must retain both intended names.");
                 await VerifyOwnedCopy(id, originalA, metadata.Filename, "latest", token);
             }
 
