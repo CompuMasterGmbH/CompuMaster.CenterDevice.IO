@@ -74,6 +74,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for SFTP upload endpoints created by the authenticated caller.</summary>
         public Rest.Clients.UploadSftps.UploadSftpsRestClient UploadSftps => new Rest.Clients.UploadSftps.UploadSftpsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for visible metadata templates and their sharing contracts.</summary>
+        public Rest.Clients.MetadataTemplates.MetadataTemplatesRestClient MetadataTemplates => new Rest.Clients.MetadataTemplates.MetadataTemplatesRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
