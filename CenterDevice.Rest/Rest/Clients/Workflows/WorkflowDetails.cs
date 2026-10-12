@@ -8,7 +8,15 @@ namespace CenterDevice.Rest.Clients.Workflows
     /// <summary>Contains an immutable explicit document-version attachment to a workflow.</summary>
     public sealed class WorkflowAttachment
     {
-        internal WorkflowAttachment(string documentId, long version) { DocumentId = documentId; Version = version; }
+        /// <summary>Initializes an explicit attachment document version without performing a workflow action.</summary>
+        /// <param name="documentId">The exact nonblank attachment document identifier.</param>
+        /// <param name="version">The explicit positive attachment version; no latest-version sentinel is inferred.</param>
+        /// <exception cref="ArgumentException">The document identity or version is unusable.</exception>
+        public WorkflowAttachment(string documentId, long version)
+        {
+            if (string.IsNullOrWhiteSpace(documentId)) throw new ArgumentException("An attachment document identifier is required.", nameof(documentId));
+            if (version <= 0) throw new ArgumentOutOfRangeException(nameof(version)); DocumentId = documentId; Version = version;
+        }
         /// <summary>Gets the original attachment document identifier.</summary>
         public string DocumentId { get; }
         /// <summary>Gets the original explicit positive attachment version.</summary>
