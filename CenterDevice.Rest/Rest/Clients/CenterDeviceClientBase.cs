@@ -59,6 +59,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for visible collection audit logs.</summary>
         public Rest.Clients.AuditLog.AuditLogRestClient AuditLog => new Rest.Clients.AuditLog.AuditLogRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for reminders created by the authenticated caller.</summary>
+        public Rest.Clients.Reminders.RemindersRestClient Reminders => new Rest.Clients.Reminders.RemindersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
