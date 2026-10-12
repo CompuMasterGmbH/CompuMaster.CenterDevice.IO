@@ -50,6 +50,34 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 (deleted.Tags == null || deleted.Tags.Contains("owned-trash-tag")),
                 "Production trash metadata must preserve supplied metadata; optional upload time and tags may remain unknown.");
 
+            phase = "scoped production trash search";
+            CheckLease();
+            var searchRequest = new TrashSearchRequest
+            {
+                Query = new TrashSearchQuery { Text = "trash" },
+                Filter = new TrashSearchFilter { Ids = new List<string> { original.Id }, Filenames = new List<string> { ledger.Filename } },
+                Fields = new TrashSearchFields { Includes = new List<string> { "id", "filename", "size", "deletion-date", "score" } },
+                Sort = new TrashSearchSort { Field = "deletion-date", Order = "desc" }, Rows = 1
+            };
+            var search = sync ? trash.Search(contextId, searchRequest, token) : await trash.SearchAsync(contextId, searchRequest, token);
+            Check(search.Hits == 1 && search.Documents.Count == 1 && search.Documents[0].Id == original.Id &&
+                search.Documents[0].Filename == ledger.Filename && search.Documents[0].Size == "latest-trash-payload".Length,
+                "Trash search must match only the exact owned ID and latest filename/payload size.");
+            Check(search.Documents[0].UploadDate == null && search.Documents[0].Tags == null,
+                "Unrequested trash metadata must remain unknown.");
+            searchRequest.Query = null;
+            searchRequest.Fields = null;
+            searchRequest.Rows = 0;
+            searchRequest.Facets = new List<TrashSearchFacet> { new TrashSearchFacet { Field = "extension" } };
+            search = sync ? trash.Search(contextId, searchRequest, token) : await trash.SearchAsync(contextId, searchRequest, token);
+            Check(search.Hits == 1 && search.Documents.Count == 0 && search.Facets != null,
+                "Facet-only trash search must retain total hits and facet data without returning documents.");
+            var terms = search.Facets["extension"]?["terms"] as Newtonsoft.Json.Linq.JArray;
+            Check(terms != null && terms.Any(term => term.Type == Newtonsoft.Json.Linq.JTokenType.Object && term.Value<string>("term") == "txt" && term.Value<long?>("count") == 1),
+                "The exact owned filename must contribute one txt extension facet.");
+            search = await trash.SearchAsync(contextId, new TrashSearchRequest { Filter = new TrashSearchFilter { Ids = new List<string> { missing } } }, token);
+            Check(search.Hits == 0 && search.Documents.Count == 0, "The independently verified missing ID must not match trash search.");
+
             phase = "selected trash restoration and exact partial failure";
             CheckLease();
             var result = sync ? trash.RestoreDocuments(contextId, new[] { original.Id, missing }, token)
@@ -69,6 +97,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             {
                 canceled.Cancel();
                 await ExpectCanceled(() => trash.GetDocumentsAsync(contextId, cancellationToken: canceled.Token));
+                await ExpectCanceled(() => trash.SearchAsync(contextId, new TrashSearchRequest(), canceled.Token));
                 await ExpectCanceled(() => trash.RestoreDocumentsAsync(contextId, new[] { original.Id }, canceled.Token));
                 await ExpectCanceled(() => trash.EraseDocumentsAsync(contextId, new[] { original.Id }, canceled.Token));
                 await ExpectCanceled(() => trash.EraseAllDocumentsAsync(contextId, canceled.Token)); // Proven pre-cancelled; no whole-trash request is submitted.
