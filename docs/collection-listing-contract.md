@@ -1,0 +1,9 @@
+﻿# Complete visible-collection queries
+
+CollectionsRestClient.GetCollectionDetails and its native asynchronous form implement all API 2.29 section 5.3.21 query parameters alongside unchanged legacy listings/interfaces. IncludePublic, deprecated All, exact Name, explicit Group, individual Ids/Fields and ordered ExtendedMetadata pairs are optional; their omission preserves server defaults. Explicit false, original empty names/metadata values, duplicate identifiers and duplicate metadata keys remain intact. Visibility, role restrictions, group sharing and conflicting deprecated parameter precedence remain server-authoritative.
+
+Extended-metadata filtering requires two encoding layers: each original key/value is URL-encoded, the encoded pairs are joined with equals/comma separators, and RestSharp encodes the complete query parameter. Reserved comma/equals/percent/plus/Unicode values cannot become query syntax. Duplicate keys preserve server last-value semantics; no local matching or normalization is performed. All options and enumerables are copied before authorization.
+
+Results use immutable collection details, preserving unknown versus false/zero and original extended/filter/audit/archive metadata. HTTP 204 yields an explicit empty immutable list. HTTP 200 must contain a collections array; malformed responses, duplicate properties and invalid known metadata retain their diagnostic as an inner exception. Selected projections may omit identifiers; no new visibility or ownership inference occurs.
+
+Native cancellation reaches authorization and HTTP I/O. Isolated tests verify exact queries and real RestSharp URI encoding, snapshots, typed metadata, original errors and cancellation. Real query visibility, metadata filtering, publication and downstream adoption remain separate acceptance in #19/#15.
