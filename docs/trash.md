@@ -35,6 +35,8 @@ Only the trash-specific fields are accepted. General-document collection/ownersh
 
 Results retain a 64-bit total hit count separately from the read-only page. Omitted document arrays are accepted only for zero hits, out-of-bounds offsets or explicit zero rows. Omitted metadata stays nullable; explicitly excluding `id` may leave it unknown. Supplied IDs must remain distinct, including GUID casing variants. Scores, timestamp offsets and 64-bit sizes are preserved without inventing owner/version fields. Facet data is a defensive `JObject` snapshot retaining complete term/range data, qualifiers, hidden counts, zero counts and numeric or textual range boundaries; missing facets remain different from an empty object. Existing expired-token refresh is retained, while uncertain HTTP outcomes are not replayed.
 
+Search inherits the manufacturer's asynchronous indexing behavior: changes and latest versions may briefly lag behind metadata-by-ID. The client returns the server's current result without retrying for visibility. The owned integration fixture waits at most 30 seconds for its selected-ID hit and facet state, using only read-only searches with cancellation/lease checks; errors and unexpected identities fail immediately, and writes are not retried.
+
 The search contract has isolated and actual private-loopback evidence. Its owned Teamwork server acceptance must be recorded separately against the exact tested head; earlier listing/restore/erase evidence does not prove the new search route.
 
 Other administration/audit contracts, direct manufacturer authentication, other-role enforcement, publication and default DMS adoption remain separate. This bounded client does not imply complete API coverage.

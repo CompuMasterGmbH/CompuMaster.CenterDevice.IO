@@ -59,7 +59,13 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 Fields = new TrashSearchFields { Includes = new List<string> { "id", "filename", "size", "deletion-date", "score" } },
                 Sort = new TrashSearchSort { Field = "deletion-date", Order = "desc" }, Rows = 1
             };
-            var search = sync ? trash.Search(contextId, searchRequest, token) : await trash.SearchAsync(contextId, searchRequest, token);
+            var search = await WaitForOwnedTrashSearch(sync, trash, searchRequest, original.Id,
+                matched => matched.Hits == 1 && matched.Documents.Count == 1 && matched.Documents[0].Id == original.Id &&
+                    matched.Documents[0].Filename == ledger.Filename && matched.Documents[0].Size == "latest-trash-payload".Length, token);
+            TestContext.Out.WriteLine("Scoped trash search: hits " + search.Hits + ", page count " + search.Documents.Count +
+                ", owned ID match " + (search.Documents.FirstOrDefault()?.Id == original.Id) +
+                ", filename match " + (search.Documents.FirstOrDefault()?.Filename == ledger.Filename) +
+                ", size " + (search.Documents.FirstOrDefault()?.Size?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "omitted") + ".");
             Check(search.Hits == 1 && search.Documents.Count == 1 && search.Documents[0].Id == original.Id &&
                 search.Documents[0].Filename == ledger.Filename && search.Documents[0].Size == "latest-trash-payload".Length,
                 "Trash search must match only the exact owned ID and latest filename/payload size.");
@@ -69,7 +75,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             searchRequest.Fields = null;
             searchRequest.Rows = 0;
             searchRequest.Facets = new List<TrashSearchFacet> { new TrashSearchFacet { Field = "extension" } };
-            search = sync ? trash.Search(contextId, searchRequest, token) : await trash.SearchAsync(contextId, searchRequest, token);
+            search = await WaitForOwnedTrashSearch(sync, trash, searchRequest, original.Id,
+                matched => matched.Hits == 1 && matched.Documents.Count == 0 && matched.Facets?["extension"]?["terms"] is Newtonsoft.Json.Linq.JArray facetTerms &&
+                    facetTerms.Any(term => term.Type == Newtonsoft.Json.Linq.JTokenType.Object && term.Value<string>("term") == "txt" && term.Value<long?>("count") == 1), token);
             Check(search.Hits == 1 && search.Documents.Count == 0 && search.Facets != null,
                 "Facet-only trash search must retain total hits and facet data without returning documents.");
             var terms = search.Facets["extension"]?["terms"] as Newtonsoft.Json.Linq.JArray;
@@ -114,6 +122,38 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             try { await client.Document.GetDocumentMetadataAsync(contextId, original.Id, token); }
             catch (NotFoundException) { absent = true; }
             Check(absent, "The permanently erased owned document must leave active metadata.");
+        }
+
+        private async Task<CenterDevice.Rest.Clients.Trash.TrashSearchResults> WaitForOwnedTrashSearch(bool sync,
+            CenterDevice.Rest.Clients.Trash.TrashRestClient trash, TrashSearchRequest request, string ownedId,
+            Func<CenterDevice.Rest.Clients.Trash.TrashSearchResults, bool> expected, CancellationToken token)
+        {
+            // API2.29 5.19.2 inherits 5.2.22's asynchronous indexing. Retry only this read-only selected-ID search.
+            using (var indexing = CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
+                indexing.CancelAfter(TimeSpan.FromSeconds(30));
+                long? lastHits = null;
+                int? lastCount = null;
+                try
+                {
+                    while (true)
+                    {
+                        CheckLease();
+                        var result = sync ? trash.Search(contextId, request, indexing.Token) : await trash.SearchAsync(contextId, request, indexing.Token);
+                        lastHits = result.Hits; lastCount = result.Documents.Count;
+                        Check(result.Hits <= 1 && result.Documents.All(document => document.Id == ownedId),
+                            "Scoped search must never return another identity or multiple owned-ID hits.");
+                        if (expected(result)) return result;
+                        await Task.Delay(TimeSpan.FromSeconds(1), indexing.Token);
+                    }
+                }
+                catch (OperationCanceledException) when (indexing.IsCancellationRequested && !token.IsCancellationRequested)
+                {
+                    throw new VerificationFailure("Owned trash search indexing timed out after 30 seconds; last hits " +
+                        (lastHits?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown") + ", page count " +
+                        (lastCount?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown") + ".");
+                }
+            }
         }
     }
 }
