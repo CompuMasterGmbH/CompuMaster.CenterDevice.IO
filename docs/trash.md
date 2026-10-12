@@ -1,0 +1,15 @@
+﻿# Own-user trash operations
+
+`CenterDeviceClientBase.Trash` supplies an additive `TrashRestClient` for API2.29 sections5.19.1 and5.19.3–5.19.5. Existing document, timeline and IO interfaces/defaults remain unchanged. Requires an admin, internal or external user; every user can access only their own trash, including administrators. The authentication-context ID is not inferred to be a trash-document owner ID.
+
+`GetDocuments[Async]` retrieves one page in descending server deletion-time order. The offset is nonnegative and rows are between1 and the server's500-item maximum. The response supplies no hit count; a full page does not prove that another page exists. The read-only page preserves order and rejects absent listings, unusable/repeated IDs, negative sizes or a page larger than requested. `TrashDocument` retains omitted metadata as null, including64-bit sizes and timestamps with server offsets. Owner and version fields are not invented. Unknown tags differ from a known empty tag list.
+
+`RestoreDocuments[Async]` and `EraseDocuments[Async]` snapshot nonempty selected identifiers before authorization. Their `DocumentCommandResult` preserves exact failed-ID spelling/order for partial success and rejects a malformed failure response or an ID outside the selected request. Restoration attempts to retain metadata, history and properties from deletion, but collections or other resources removed afterward cannot be restored. Selected erasure permanently removes all versions and representations; the data cannot be restored.
+
+`EraseAllDocuments[Async]` is a separate explicitly named bodyless DELETE of the whole own-user trash. It includes documents unrelated to the caller's workflow. Use only selected erasure for test cleanup; no whole-trash mutation is part of the integration fixture. A pre-cancelled whole-trash call exercises only cancellation before authorization/dispatch.
+
+Cancellation reaches authorization, request admission and native HTTP I/O, but does not establish whether an already submitted write committed. Restore/erase side effects are idempotent, while partial-failure responses can change between calls. Writes are not automatically replayed after uncertain outcomes; callers must reconcile partial success.
+
+Isolated tests cover defaults/bounds, omission versus empty, large metadata, exact nested command bodies, distinct whole-trash shape, snapshotting, partial errors, roles/missing/transient errors, cancellation, immutable result lists and compatibility. Actual private loopback probes verify the public factory/default serializer with UTF-8 metadata and no POST/DELETE replay after503. The explicit owned Teamwork fixture verifies only selected restoration/erasure and metadata/history/payload/identity preservation, with journal recovery and independent finally cleanup; live evidence must be recorded against its exact tested head.
+
+Trash search(section5.19.2), other administration/audit contracts, direct manufacturer authentication, other-role enforcement, publication and default DMS adoption remain separate. This bounded client does not imply complete API coverage.
