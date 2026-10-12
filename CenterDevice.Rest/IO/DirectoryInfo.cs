@@ -49,6 +49,7 @@ namespace CenterDevice.IO
         /// <summary>Copies a directory and its visible contents, preserving the source name.</summary>
         /// <param name="source">The source collection or folder in the same authenticated instance.</param>
         /// <remarks>Includes subdirectories. Copies are new documents without inherited sharing or metadata; a partial failure leaves created destination resources for reconciliation.</remarks>
+        /// <inheritdoc cref="AddDirectoryCopyAsync"/>
         public void AddCopy(DirectoryInfo source)
         {
             AddDirectoryCopyAsync(source).ConfigureAwait(false).GetAwaiter().GetResult();
