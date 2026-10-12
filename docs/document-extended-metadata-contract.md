@@ -1,0 +1,9 @@
+﻿# Explicit extended document metadata
+
+UpdateExtendedMetadata and its native asynchronous form implement API 2.29 section 5.2.35 with explicit dotted Set/Unset selections and the deprecated original Metadata namespace parameter. Values and ordered removal paths are copied before authorization. Whole namespaces, typed sections and individual string/string-array fields retain original content. Typed null omits a choice; empty parameters do not implicitly delete anything. Overlap and deprecated parameter precedence remain server-authoritative.
+
+Known structures follow the namespace/section/field schema: value is a string or string array; dates/numbers contain original strings; other sections contain string/string-array fields. Dot/dollar/equals signs cannot occur in component names, and dotted paths select at most namespace/section/field. Namespace names are case-sensitive: `common` is read-only, while `Common` is a custom namespace. No date conversion, decimal-width/precision coercion, template construction, current metadata lookup or sharing/permission change occurs. The server validates actual date/decimal text and rejects an invalid whole request.
+
+Updates are version-independent and select an escaped document ID. HTTP 204 confirms the command; original errors remain available. Native cancellation reaches authorization and HTTP I/O and cannot establish that no metadata changed. No new mutation replay is added. Existing APIs/interfaces/defaults remain unchanged.
+
+Isolated fixtures verify original namespaces/sections/fields/dates/number strings, snapshots, explicit removals/overlap, deprecated/future parameters, known schema failures/read-only common, errors and cancellation. Actual owner/role/template/indexing behavior, verified cleanup, publication and downstream adoption remain separate in #18/#15.
