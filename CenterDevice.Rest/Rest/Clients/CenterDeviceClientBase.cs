@@ -80,6 +80,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for own workflow-template management and explicit template use.</summary>
         public Rest.Clients.WorkflowTemplates.WorkflowTemplatesRestClient WorkflowTemplates => new Rest.Clients.WorkflowTemplates.WorkflowTemplatesRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for explicitly selected direct workflow commands.</summary>
+        public Rest.Clients.Workflows.WorkflowsRestClient Workflows => new Rest.Clients.Workflows.WorkflowsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
