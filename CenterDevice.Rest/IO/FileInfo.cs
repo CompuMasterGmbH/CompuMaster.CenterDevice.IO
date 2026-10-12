@@ -217,7 +217,7 @@ namespace CenterDevice.IO
         public void UploadNewVersion(string localPath)
         {
             this.ioClient.ApiClient.Document.UploadNewVersion(this.ioClient.CurrentAuthenticationContextUserID, this.ID, this.FileName, localPath, System.Threading.CancellationToken.None);
-            this.parentDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
+            this.parentDirectory.ResetFilesCache(); //force reload on next request since changed file properties must be reloaded
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace CenterDevice.IO
         public void UploadNewVersion(System.Func<System.IO.Stream> fileDataStream)
         {
             this.ioClient.ApiClient.Document.UploadNewVersion(this.ioClient.CurrentAuthenticationContextUserID, this.ID, this.FileName, fileDataStream, System.Threading.CancellationToken.None);
-            this.parentDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
+            this.parentDirectory.ResetFilesCache(); //force reload on next request since changed file properties must be reloaded
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace CenterDevice.IO
         public void Delete()
         {
             this.ioClient.ApiClient.Document.DeleteDocument(this.ioClient.CurrentAuthenticationContextUserID, this.ID);
-            this.parentDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
+            this.parentDirectory.ResetFilesCache(); //force reload on next request since changed file properties must be reloaded
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace CenterDevice.IO
         public void Rename(string targetFileName)
         {
             this.ioClient.ApiClient.Document.RenameDocument(this.ioClient.CurrentAuthenticationContextUserID, this.ID, targetFileName);
-            this.parentDirectory.getFiles = null; //force reload on next request since changed file properties must be reloaded
+            this.parentDirectory.ResetFilesCache(); //force reload on next request since changed file properties must be reloaded
             this.fileName = targetFileName;
         }
 

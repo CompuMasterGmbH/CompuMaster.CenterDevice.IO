@@ -176,53 +176,11 @@ namespace CenterDevice.IO
         }
 
         protected DirectoryInfo[] getDirectories = null;
+        /// <summary>Retrieves immediate child directories through the shared asynchronous listing cache.</summary>
+        /// <inheritdoc cref="GetDirectoriesAsync"/>
         public DirectoryInfo[] GetDirectories()
         {
-            if (this.getDirectories == null)
-            {
-                if (this.IsRootDirectory)
-                {
-                    //root directory
-                    //List<CenterDevice.Rest.Clients.Collections.Collection> results = this.ioClient.ApiClient.Collections.GetCollections(this.ioClient.UserID).Collections;
-                    List<CenterDevice.Rest.Clients.Collections.Collection> results = this.ioClient.LookupCollections();
-                    var dirs = new List<DirectoryInfo>();
-                    if (results != null)
-                    {
-                        foreach (Rest.Clients.Collections.Collection result in results)
-                        {
-                            dirs.Add(new DirectoryInfo(this.ioClient, this, result));
-                        }
-                        this.getDirectories = dirs.ToArray();
-                    }
-                }
-                else if (this.restCollection != null)
-                {
-                    //List<Rest.Clients.Folders.Folder> results = this.ioClient.ApiClient.Folders.GetFolders(this.ioClient.UserID, this.restCollection.Id, CenterDevice.Rest.RestApiConstants.NONE, null).Folders;
-                    this.ioClient.LookupCollectionFolders(this.restCollection);
-                    List<Rest.Clients.Folders.Folder> results = this.restCollection.SubFolders;
-                    var dirs = new List<DirectoryInfo>();
-                    foreach (Rest.Clients.Folders.Folder result in results)
-                    {
-                        dirs.Add(new DirectoryInfo(this.ioClient, this, result));
-                    }
-                    this.getDirectories = dirs.ToArray();
-                }
-                else if (this.restFolder != null)
-                {
-                    //List<Rest.Clients.Folders.Folder> results = this.ioClient.ApiClient.Folders.GetFolders(this.ioClient.UserID, this.restFolder.Id, CenterDevice.Rest.RestApiConstants.NONE, null).Folders;
-                    this.ioClient.LookupFolders(this.restFolder);
-                    List<Rest.Clients.Folders.Folder> results = this.restFolder.SubFolders;
-                    var dirs = new List<DirectoryInfo>();
-                    foreach (Rest.Clients.Folders.Folder result in results)
-                    {
-                        dirs.Add(new DirectoryInfo(this.ioClient, this, result));
-                    }
-                    this.getDirectories = dirs.ToArray();
-                }
-                else
-                    throw new System.NotImplementedException();
-            }
-            return this.getDirectories;
+            return GetDirectoriesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public DirectoryInfo[] GetDirectories(int recurseLevels)
@@ -236,15 +194,15 @@ namespace CenterDevice.IO
             {
                 if ((browseForFiles) && (this.getFiles == null))
                     this.GetFiles();
-                this.getDirectories = this.GetDirectories();
+                var directories = this.GetDirectories();
                 if (recurseLevels > 0)
                 {
-                    foreach (DirectoryInfo subDir in this.getDirectories)
+                    foreach (DirectoryInfo subDir in directories)
                     {
                         subDir.GetDirectories(recurseLevels - 1, browseForFiles);
                     }
                 }
-                return this.getDirectories;
+                return directories;
             }
             else
                 return null;
@@ -357,42 +315,13 @@ namespace CenterDevice.IO
 
         internal protected FileInfo[] getFiles = null;
         /// <summary>
-        /// Get the directory's files
+        /// Retrieves immediate files through the shared asynchronous listing cache.
         /// </summary>
         /// <returns></returns>
+        /// <inheritdoc cref="GetFilesAsync"/>
         public FileInfo[] GetFiles()
         {
-            if (this.getFiles == null)
-            {
-                if (this.IsRootDirectory)
-                {
-                    //root directory can't contain files, only directories (collections)
-                    this.getFiles = new FileInfo[] { };
-                }
-                else if (this.restCollection != null)
-                {
-                    this.ioClient.LookupCollectionDocuments(this.restCollection);
-                    var files = new List<FileInfo>();
-                    foreach (Rest.Clients.Documents.Metadata.DocumentFullMetadata result in this.restCollection.Documents)
-                    {
-                        files.Add(new FileInfo(this.ioClient, this, result));
-                    }
-                    this.getFiles = files.ToArray();
-                }
-                else if (this.restFolder != null)
-                {
-                    this.ioClient.LookupDocuments(this.restFolder);
-                    var files = new List<FileInfo>();
-                    foreach (Rest.Clients.Documents.Metadata.DocumentFullMetadata result in this.restFolder.Documents)
-                    {
-                        files.Add(new FileInfo(this.ioClient, this, result));
-                    }
-                    this.getFiles = files.ToArray();
-                }
-                else
-                    throw new System.NotImplementedException();
-            }
-            return this.getFiles;
+            return GetFilesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         [Obsolete("Use ContainsCollidingDuplicateFiles instead"), System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -971,7 +900,7 @@ namespace CenterDevice.IO
                 default:
                     throw new ArgumentOutOfRangeException(nameof(uploadMode));
             }
-            this.getFiles = null; //force reload on next request
+            ResetFilesCache(); //force reload on next request
         }
 
         public void Upload(System.Func<System.IO.Stream> fileDataStream, string fileName, UploadMode uploadMode)
@@ -998,7 +927,7 @@ namespace CenterDevice.IO
                 default:
                     throw new ArgumentOutOfRangeException(nameof(uploadMode));
             }
-            this.getFiles = null; //force reload on next request
+            ResetFilesCache(); //force reload on next request
         }
 
         /// <summary>
@@ -1011,7 +940,7 @@ namespace CenterDevice.IO
             if (this.IsRootDirectory)
                 throw new System.InvalidOperationException("Upload to root directory not allowed");
             this.ioClient.ApiClient.Documents.UploadDocument(this.ioClient.CurrentAuthenticationContextUserID, fileName, fileDataStream, this.CollectionID ?? this.ParentCollection.CollectionID, this.FolderID, System.Threading.CancellationToken.None);
-            this.getFiles = null; //force reload on next request
+            ResetFilesCache(); //force reload on next request
         }
 
         /// <summary>
@@ -1024,7 +953,7 @@ namespace CenterDevice.IO
             if (this.IsRootDirectory)
                 throw new System.InvalidOperationException("Upload to root directory not allowed");
             this.ioClient.ApiClient.Documents.UploadDocument(this.ioClient.CurrentAuthenticationContextUserID, fileName, localPath, this.CollectionID ?? this.ParentCollection.CollectionID, this.FolderID, System.Threading.CancellationToken.None);
-            this.getFiles = null; //force reload on next request
+            ResetFilesCache(); //force reload on next request
         }
 
         /// <summary>
@@ -1033,13 +962,7 @@ namespace CenterDevice.IO
         /// <param name="directoryName"></param>
         public void CreateDirectory(string directoryName)
         {
-            if (directoryName.Contains(this.ioClient.Paths.DirectorySeparatorChar.ToString())) throw new ArgumentException("Not allowed char in directoryName: " + this.ioClient.Paths.DirectorySeparatorChar.ToString());
-            if (directoryName.Contains(this.ioClient.Paths.AltDirectorySeparatorChar.ToString())) throw new ArgumentException("Not allowed char in directoryName: " + this.ioClient.Paths.AltDirectorySeparatorChar.ToString());
-            if (this.IsRootDirectory)
-                this.ioClient.ApiClient.Collections.CreateCollection(this.ioClient.CurrentAuthenticationContextUserID, directoryName);
-            else
-                this.ioClient.ApiClient.Folders.CreateFolder(this.ioClient.CurrentAuthenticationContextUserID, directoryName, this.restCollection?.Id, this.restFolder?.Id);
-            this.getDirectories = null; //force reload on next request
+            CreateDirectoryAsync(directoryName).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1073,11 +996,7 @@ namespace CenterDevice.IO
         /// <param name="style"></param>
         public void CreateDirectory(string directoryName, DirectoryType style)
         {
-            if (style == DirectoryType.Collection)
-                this.ioClient.ApiClient.Collections.CreateCollection(this.ioClient.CurrentAuthenticationContextUserID, directoryName);
-            else
-                this.ioClient.ApiClient.Folders.CreateFolder(this.ioClient.CurrentAuthenticationContextUserID, directoryName, this.restCollection?.Id, this.restFolder?.Id);
-            this.getDirectories = null; //force reload on next request
+            CreateDirectoryAsync(directoryName, style).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public DirectoryType Type
@@ -1095,15 +1014,7 @@ namespace CenterDevice.IO
         /// </summary>
         public void Delete()
         {
-            if (this.IsRootDirectory)
-                throw new NotSupportedException("Removing root directory is not supported");
-            else if (this.restCollection != null)
-                this.ioClient.ApiClient.Collection.DeleteCollection(this.ioClient.CurrentAuthenticationContextUserID, this.restCollection.Id);
-            else if (this.restFolder != null)
-                this.ioClient.ApiClient.Folder.DeleteFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id);
-            else
-                throw new NotImplementedException("Delecte action for this directory type hasn't been implemented, yet");
-            this.ParentDirectory.getDirectories = null; //force reload on next request
+            DeleteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1112,22 +1023,7 @@ namespace CenterDevice.IO
         /// <param name="targetDirectory"></param>
         public void Move(DirectoryInfo targetDirectory)
         {
-            if (this.IsRootDirectory)
-                throw new NotSupportedException("Moving root directory is not supported");
-            else if (this.restCollection != null)
-                throw new NotSupportedException("Moving a collection directory is not supported (collections must remain collections, folders must remain folders)");
-            else if (this.restFolder != null)
-                if (targetDirectory.restFolder != null)
-                    this.ioClient.ApiClient.Folder.MoveFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id, targetDirectory.FolderID, targetDirectory.AssociatedCollection.restCollection.Id);
-                else if (targetDirectory.restCollection != null)
-                    this.ioClient.ApiClient.Folder.MoveFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id, null, targetDirectory.restCollection.Id);
-                else
-                    throw new NotImplementedException("Delete action for this folder directory type hasn't been implemented, yet");
-            else
-                throw new NotImplementedException("Delete action for this directory type hasn't been implemented, yet");
-            this.ParentDirectory.getDirectories = null; //force reload on next request
-            targetDirectory.getDirectories = null; //force reload on next request
-            this.parentDirectory = targetDirectory; //correctly re-assign current file to new parent directory
+            MoveAsync(targetDirectory).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1136,16 +1032,7 @@ namespace CenterDevice.IO
         /// <param name="targetName"></param>
         public void Rename(string targetName)
         {
-            if (this.IsRootDirectory)
-                throw new NotSupportedException("Renaming root directory is not supported");
-            else if (this.restCollection != null)
-                this.ioClient.ApiClient.Collection.RenameCollection(this.ioClient.CurrentAuthenticationContextUserID, this.restCollection.Id, targetName);
-            else if (this.restFolder != null)
-                this.ioClient.ApiClient.Folder.RenameFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id, targetName);
-            else
-                throw new NotImplementedException("Rename action for this directory type hasn't been implemented, yet");
-            this.ParentDirectory.getDirectories = null; //force reload on next request
-            this.name = targetName;
+            RenameAsync(targetName).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1161,7 +1048,7 @@ namespace CenterDevice.IO
                 this.ioClient.ApiClient.Folder.ShareFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id, userIDs, groupIDs);
             else
                 throw new NotImplementedException("Share action for this directory type hasn't been implemented, yet");
-            this.ParentDirectory.getDirectories = null; //force reload on next request
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload on next request
         }
 
         /// <summary>
@@ -1177,7 +1064,7 @@ namespace CenterDevice.IO
                 this.ioClient.ApiClient.Folder.UnshareFolder(this.ioClient.CurrentAuthenticationContextUserID, this.restFolder.Id, userIDs, groupIDs);
             else
                 throw new NotImplementedException("Share action for this directory type hasn't been implemented, yet");
-            this.ParentDirectory.getDirectories = null; //force reload on next request
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload on next request
         }
 
         public static Rest.Clients.Link.LinkAccessControl CreateLinkAccessControlItem(DateTime expiryDateUtc, string password, int maxDownloads, bool allowView, bool allowEdit, bool allowRemove, bool allowUpload)
@@ -1200,7 +1087,7 @@ namespace CenterDevice.IO
         public Rest.Clients.Link.LinkCreationResponse AddExternalLinkSharing(DateTime expiryDateUtc, string password, int maxDownloads, bool allowView, bool allowEdit, bool allowRemove, bool allowUpload)
         {
             var result = this.AddExternalLinkSharing(CreateLinkAccessControlItem(expiryDateUtc, password, maxDownloads, allowView, allowEdit, allowRemove, allowUpload));
-            this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
             return result;
         }
 
@@ -1214,13 +1101,13 @@ namespace CenterDevice.IO
             else if (this.restCollection != null)
             {
                 var result = this.ioClient.ApiClient.Links.CreateCollectionLink(this.ioClient.CurrentAuthenticationContextUserID, this.restCollection.Id, settings);
-                this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+                this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
                 return result;
             }
             else if (this.restFolder != null)
             {
                 var result = this.ioClient.ApiClient.Links.CreateFolderLink(this.ioClient.CurrentAuthenticationContextUserID, this.restCollection.Id, settings);
-                this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+                this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
                 return result;
             }
             else
@@ -1233,7 +1120,7 @@ namespace CenterDevice.IO
         public void RemoveExternalLinkSharing(Rest.Clients.Link.LinkCreationResponse link)
         {
             this.RemoveExternalLinkSharing(link.Id);
-            this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
         }
 
         /// <summary>
@@ -1242,7 +1129,7 @@ namespace CenterDevice.IO
         public void RemoveExternalLinkSharing(string linkId)
         {
             this.ioClient.ApiClient.Link.DeleteLink(this.ioClient.CurrentAuthenticationContextUserID, linkId);
-            this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
         }
 
         /// <summary>
@@ -1251,7 +1138,7 @@ namespace CenterDevice.IO
         public void UpdateExternalLinkSharing(string linkId, DateTime expiryDateUtc, string password, int maxDownloads, bool allowView, bool allowEdit, bool allowRemove, bool allowUpload)
         {
             this.UpdateExternalLinkSharing(linkId, CreateLinkAccessControlItem(expiryDateUtc, password, maxDownloads, allowView, allowEdit, allowRemove, allowUpload));
-            this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
         }
 
         /// <summary>
@@ -1260,7 +1147,7 @@ namespace CenterDevice.IO
         public void UpdateExternalLinkSharing(string linkId, Rest.Clients.Link.LinkAccessControl settings)
         {
             this.ioClient.ApiClient.Link.UpdateLink(this.ioClient.CurrentAuthenticationContextUserID, linkId, settings);
-            this.ParentDirectory.getDirectories = null; //force reload of directories with modified share setup
+            this.ParentDirectory.ResetDirectoriesCache(); //force reload of directories with modified share setup
         }
 
         /// <summary>

@@ -21,16 +21,21 @@ namespace CenterDevice.IO
         }
 
         private DirectoryInfo directoryInfo = null;
+        private readonly object rootDirectoryPublication = new object();
         /// <summary>
-        /// A buffered access to the remote directory structure
+        /// Retrieves the buffered root of the remote directory structure.
         /// </summary>
+        /// <remarks>Concurrent callers share one published root. Resetting the cache creates a new root for subsequent access without invalidating previously returned directory objects.</remarks>
         public DirectoryInfo RootDirectory
         {
             get
             {
-                if (this.directoryInfo == null)
-                    this.directoryInfo = new DirectoryInfo(this);
-                return this.directoryInfo;
+                lock (rootDirectoryPublication)
+                {
+                    if (this.directoryInfo == null)
+                        this.directoryInfo = new DirectoryInfo(this);
+                    return this.directoryInfo;
+                }
             }
         }
 
@@ -39,7 +44,7 @@ namespace CenterDevice.IO
         /// </summary>
         public void ResetDirectoryCache()
         {
-            this.directoryInfo = null;
+            lock (rootDirectoryPublication) this.directoryInfo = null;
         }
 
         protected readonly string currentAuthenticationContextUserID;
