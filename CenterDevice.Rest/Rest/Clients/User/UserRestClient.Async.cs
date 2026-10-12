@@ -44,17 +44,14 @@ namespace CenterDevice.Rest.Clients.User
             return UnwrapResponse(response, new StatusCodeResponseHandler<BaseUserData>(HttpStatusCode.OK));
         }
 
-        /// <summary>Performs the get user data field operation using asynchronous HTTP I/O.</summary>
-        /// <param name="userId">The user id for this operation.</param>
-        /// <param name="userIdToRequest">The user id to request for this operation.</param>
-        /// <param name="field">The field for this operation.</param>
+        /// <summary>Retrieves selected details for a user using asynchronous HTTP I/O.</summary>
+        /// <inheritdoc cref="GetUserDataField"/>
         /// <param name="cancellationToken">Cancels queue admission and active HTTP I/O.</param>
-        /// <returns>A task representing the operation and its result.</returns>
         public async Task<FullUserData> GetUserDataFieldAsync(string userId, string userIdToRequest, string field, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var request = CreateRestRequest(URI_RESOURCE + "/" + userIdToRequest, Method.Get);
-            request.AddQueryParameter(RestApiConstants.FIELDS, field);
+            request.AddQueryParameter("data", field);
 
             var response = (await ExecuteAsync<FullUserData>((await GetOAuthInfoAsync(userId, cancellationToken).ConfigureAwait(false)), request, cancellationToken).ConfigureAwait(false));
             return UnwrapResponse(response, new StatusCodeResponseHandler<FullUserData>(HttpStatusCode.OK));

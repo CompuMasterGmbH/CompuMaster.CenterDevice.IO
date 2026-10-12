@@ -35,10 +35,16 @@ namespace CenterDevice.Rest.Clients.User
             return UnwrapResponse(response, new StatusCodeResponseHandler<BaseUserData>(HttpStatusCode.OK));
         }
 
+        /// <summary>Retrieves selected details for a user.</summary>
+        /// <param name="userId">The authentication-context user identifier.</param>
+        /// <param name="userIdToRequest">The explicitly selected user identifier.</param>
+        /// <param name="field">The comma-separated manufacturer data fields, or all for all available details.</param>
+        /// <returns>The selected user details supplied by the server.</returns>
+        /// <remarks>Selection uses the user resource's data query parameter. The server enforces visibility; groups and collections are available only for the current user. Existing signatures, models and other getter defaults remain unchanged.</remarks>
         public FullUserData GetUserDataField(string userId, string userIdToRequest, string field)
         {
             var request = CreateRestRequest(URI_RESOURCE + "/" + userIdToRequest, Method.Get);
-            request.AddQueryParameter(RestApiConstants.FIELDS, field);
+            request.AddQueryParameter("data", field);
 
             var response = Execute<FullUserData>(GetOAuthInfo(userId), request);
             return UnwrapResponse(response, new StatusCodeResponseHandler<FullUserData>(HttpStatusCode.OK));
