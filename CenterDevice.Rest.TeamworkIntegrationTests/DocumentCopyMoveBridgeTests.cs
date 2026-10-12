@@ -59,13 +59,17 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             RecordCopyIds(bulk);
             TestContext.Out.WriteLine("Bulk response count: " + bulk.Count + ".");
             Check(bulk.Count == 2 && bulk.Distinct().Count() == 2, "Bulk selections must create distinct documents.");
+            var actualBulkNames = new List<string>();
             foreach (var id in bulk)
             {
                 var metadata = await client.Document.GetDocumentMetadataAsync(contextId, id, token);
                 Check(bulkNames.Contains(metadata.Filename), "Bulk results must match an intended name without assuming result mapping.");
+                actualBulkNames.Add(metadata.Filename);
                 await VerifyOwnedCopy(id, metadata.Filename == bulkNames[0] ? originalA : originalB, metadata.Filename,
                     metadata.Filename == bulkNames[0] ? "latest" : "child-payload", token);
             }
+            Check(actualBulkNames.OrderBy(name => name, StringComparer.Ordinal).SequenceEqual(bulkNames.OrderBy(name => name, StringComparer.Ordinal)),
+                "Bulk results must contain exactly one document for each intended filename.");
 
             phase = "repeated-source document server copy";
             CheckLease();
@@ -74,12 +78,16 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 : await client.Documents.CopyDocumentsAsync(contextId, selections, folderId: target.FolderID, cancellationToken: token);
             RecordCopyIds(duplicates);
             Check(duplicates.Count == 2 && duplicates.Distinct().Count() == 2, "Repeated source selections must create distinct documents through separate batches.");
+            var actualDuplicateNames = new List<string>();
             foreach (var id in duplicates)
             {
                 var metadata = await client.Document.GetDocumentMetadataAsync(contextId, id, token);
                 Check(duplicateNames.Contains(metadata.Filename), "Repeated-source copies must retain both intended names.");
+                actualDuplicateNames.Add(metadata.Filename);
                 await VerifyOwnedCopy(id, originalA, metadata.Filename, "latest", token);
             }
+            Check(actualDuplicateNames.OrderBy(name => name, StringComparer.Ordinal).SequenceEqual(duplicateNames.OrderBy(name => name, StringComparer.Ordinal)),
+                "Repeated-source results must contain exactly one document for each intended filename.");
 
             phase = "recursive directory server copy";
             CheckLease();
