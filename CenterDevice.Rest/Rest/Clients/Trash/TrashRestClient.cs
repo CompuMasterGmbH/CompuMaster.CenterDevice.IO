@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 namespace CenterDevice.Rest.Clients.Trash
 {
     /// <summary>Retrieves and changes the authenticated user's own trash contents.</summary>
-    /// <remarks>Requires an admin, internal or external user. Even administrators cannot access another user's trash through this resource. Search is a separate contract not supplied here. Uncertain writes are not automatically replayed.</remarks>
-    public class TrashRestClient : CenterDeviceRestClient
+    /// <remarks>Requires an admin, internal or external user. Even administrators cannot access another user's trash through this resource. Uncertain writes are not automatically replayed.</remarks>
+    public partial class TrashRestClient : CenterDeviceRestClient
     {
         /// <summary>Initializes a trash client with the existing authorization and transport configuration.</summary>
         /// <param name="oauthInfoProvider">The authorization information provider.</param>

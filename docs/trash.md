@@ -1,6 +1,6 @@
 ﻿# Own-user trash operations
 
-`CenterDeviceClientBase.Trash` supplies an additive `TrashRestClient` for API2.29 sections5.19.1 and5.19.3–5.19.5. Existing document, timeline and IO interfaces/defaults remain unchanged. Requires an admin, internal or external user; every user can access only their own trash, including administrators. The authentication-context ID is not inferred to be a trash-document owner ID.
+`CenterDeviceClientBase.Trash` supplies an additive `TrashRestClient` for API2.29 sections 5.19.1–5.19.5. Existing document, timeline and IO interfaces/defaults remain unchanged. Requires an admin, internal or external user; every user can access only their own trash, including administrators. The authentication-context ID is not inferred to be a trash-document owner ID.
 
 `GetDocuments[Async]` retrieves one page in descending server deletion-time order. The offset is nonnegative and rows are between1 and the server's500-item maximum. The response supplies no hit count; a full page does not prove that another page exists. The read-only page preserves order and rejects absent listings, unusable/repeated IDs, negative sizes or a page larger than requested. `TrashDocument` retains omitted metadata as null, including64-bit sizes and timestamps with server offsets. Owner and version fields are not invented. Unknown tags differ from a known empty tag list.
 
@@ -14,4 +14,27 @@ Cancellation reaches authorization, request admission and native HTTP I/O, but d
 
 Isolated tests cover defaults/bounds, omission versus empty, large metadata, exact nested command bodies, distinct whole-trash shape, snapshotting, partial errors, roles/missing/transient errors, cancellation, immutable result lists and compatibility. Actual private loopback probes verify the public factory/default serializer with UTF-8 metadata and no POST/DELETE replay after503. The explicit owned Teamwork fixture verifies only selected restoration/erasure and metadata/history/payload/identity preservation, with journal recovery and independent finally cleanup; live evidence must be recorded against its exact tested head.
 
-Trash search(section5.19.2), other administration/audit contracts, direct manufacturer authentication, other-role enforcement, publication and default DMS adoption remain separate. This bounded client does not imply complete API coverage.
+## Search
+
+`Search[Async]` accepts a `TrashSearchRequest`. The query, metadata filters, field selection, ordering and requested facets are snapshotted before authorization. A default request sends `params: {}` so that query-dependent server defaults remain intact. Null options are omitted; explicit empty query text, lists and field projections remain explicit. `rows=0` requests hits and facets without document entries; a positive request can be capped by the server, and no 500-row search cap is inferred from the separate GET contract.
+
+```csharp
+var results = await client.Trash.SearchAsync(contextId, new TrashSearchRequest
+{
+    Query = new TrashSearchQuery { Text = "invoice" },
+    Filter = new TrashSearchFilter
+    {
+        DeletionDate = new TrashSearchDateRange { From = DateTimeOffset.UtcNow.AddDays(-7) }
+    },
+    Sort = new TrashSearchSort { Field = "deletion-date", Order = "desc" },
+    Rows = 25
+}, cancellationToken);
+```
+
+Only the trash-specific fields are accepted. General-document collection/ownership filters, named queries and negation are unavailable. Size/date ranges support either inclusive bound; reversed bounds are rejected. Includes/excludes are mutually exclusive. Duplicate facets require distinct qualifiers on every occurrence. Facet sizes are positive and only affect term facets; range facets ignore them.
+
+Results retain a 64-bit total hit count separately from the read-only page. Omitted document arrays are accepted only for zero hits, out-of-bounds offsets or explicit zero rows. Omitted metadata stays nullable; explicitly excluding `id` may leave it unknown. Supplied IDs must remain distinct, including GUID casing variants. Scores, timestamp offsets and 64-bit sizes are preserved without inventing owner/version fields. Facet data is a defensive `JObject` snapshot retaining complete term/range data, qualifiers, hidden counts, zero counts and numeric or textual range boundaries; missing facets remain different from an empty object. Existing expired-token refresh is retained, while uncertain HTTP outcomes are not replayed.
+
+The search contract has isolated and actual private-loopback evidence. Its owned Teamwork server acceptance must be recorded separately against the exact tested head; earlier listing/restore/erase evidence does not prove the new search route.
+
+Other administration/audit contracts, direct manufacturer authentication, other-role enforcement, publication and default DMS adoption remain separate. This bounded client does not imply complete API coverage.
