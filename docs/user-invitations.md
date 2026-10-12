@@ -1,0 +1,11 @@
+﻿# Explicit user invitations
+
+API 2.29 section 5.8.5 declares POST users/action invite with params.emails and HTTP 200 invited/not-invited arrays. UsersRestClient adds synchronous/native async InviteUsers without modifying old user listing interfaces/defaults.
+
+The nonempty nonnull selection is captured once before authorization. Address strings are sent unchanged, including duplicates, empty text and other malformed syntax so the server can return its specific error code. Null elements are rejected locally. Returned address spelling/order, created user IDs and numeric error codes are retained in read-only results, including future Int64 code values. Invalid syntax (1), existing tenant address (2), tenant restriction (3) and unknown error (100) are manufacturer codes, not inferred local outcomes.
+
+Both response arrays must be present. Every selected address must be represented and every outcome must belong to the request, allowing case differences for reconciliation. Malformed, foreign or incomplete results preserve their parsing cause and cannot establish complete success. Duplicate submitted addresses are preserved; response duplicates/individual outcomes remain visible instead of being silently deduplicated. AllSucceeded requires no failures after selected addresses are accounted for; HTTP 200 alone does not imply all invitations succeeded.
+
+Only admins/internal users may invite. Invited users still need confirmation and receive the server default guest role. Delivery, registration and permission are server behavior. The manufacturer calls the request idempotent while no invitations have been accepted; uncertain writes and partial failures are not automatically replayed. Native cancellation reaches authorization/admission/HTTP and cannot prove no users were invited. Existing expired-token refresh remains inherited.
+
+Isolated and private loopback fixtures must use fake addresses and do not send actual invitations. Actual acceptance requires a coordinated owned tenant/account scope and verified cleanup of invited test accounts; permanent/shared users and arbitrary recipients must remain untouched. Other user/tenant/settings source, full role/module verification, current remote matrix/publication and exact default-package adoption remain separate under #20/#15.
