@@ -53,6 +53,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for the authenticated user's own trash.</summary>
         public Rest.Clients.Trash.TrashRestClient Trash => new Rest.Clients.Trash.TrashRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for the authenticated caller's statistics.</summary>
+        public Rest.Clients.Statistics.StatisticsRestClient Statistics => new Rest.Clients.Statistics.StatisticsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         public Rest.Clients.Folders.FolderRestClient Folder => new Rest.Clients.Folders.FolderRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Folders.FoldersRestClient Folders => new Rest.Clients.Folders.FoldersRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
         public Rest.Clients.Collections.CollectionRestClient Collection => new Rest.Clients.Collections.CollectionRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
