@@ -22,6 +22,29 @@ namespace CenterDevice.Rest.AsyncTests
     [TestFixture]
     public class RepresentationDownloadTests
     {
+        [Test, Combinatorial]
+        public async Task NewDocumentDownloadsPreserveConfiguredBridgePath(
+            [Values("pdf", "mp4", "fulltext", "preview", "zip")] string format, [Values(false, true)] bool trailing, [Values(false, true)] bool leading)
+        {
+            var address = "https://unused.test/bridge" + (trailing ? "/" : "");
+            var prefix = (leading ? "/" : "") + "v2/";
+            if (format == "zip")
+            {
+                var content = new StringContent("zip"); content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+                var zip = new ZipClient(new Auth(), address, prefix) { Content = content };
+                using (await zip.DownloadDocumentsAsZipAsync("user", new[] { "id" })) { }
+                Assert.That(zip.Uri.AbsoluteUri, Is.EqualTo("https://unused.test/bridge/v2/documents"));
+            }
+            else
+            {
+                var content = new StringContent("data"); content.Headers.ContentType = new MediaTypeHeaderValue(format == "preview" ? "image/jpeg" : Mime(format));
+                var client = new Client(new Auth(), address: address, prefix: prefix) { Content = content };
+                if (format == "preview") using (await client.DownloadPreviewsAsync("user", "part/with?query", PreviewSize._120)) { }
+                else using (await Open(client, format, false)) { }
+                Assert.That(client.Uri.AbsoluteUri, Is.EqualTo("https://unused.test/bridge/v2/document/" + (format == "preview" ? "part%2Fwith%3Fquery;preview=120x120;pages=1" : "selected")));
+            }
+        }
+
         [TestCase("pdf", false), TestCase("pdf", true), TestCase("mp4", false), TestCase("mp4", true),
          TestCase("fulltext", false), TestCase("fulltext", true)]
         public async Task SelectedVersionUsesMimeNegotiationAndResponseOwnership(string format, bool sync)
@@ -510,7 +533,7 @@ namespace CenterDevice.Rest.AsyncTests
             internal Uri Uri;
             internal HttpMethod Method;
             internal int Calls;
-            internal ZipClient(Auth auth) : base(auth, new Configuration(), null, null, "v2/") { }
+            internal ZipClient(Auth auth, string address = "https://unused.test/bridge/", string prefix = "v2/") : base(auth, new Configuration(address), null, null, prefix) { }
             protected override async Task<HttpResponseMessage> SendResourceDownloadRequestAsync(HttpRequestMessage request, CancellationToken token)
             {
                 Calls++; Json = await request.Content.ReadAsStringAsync(); Uri = request.RequestUri; Method = request.Method;
@@ -567,8 +590,8 @@ namespace CenterDevice.Rest.AsyncTests
             internal int Calls;
             internal Func<CancellationToken, Task> OnSend;
             internal readonly Queue<HttpResponseMessage> Replies = new Queue<HttpResponseMessage>();
-            internal Client(Auth auth, IStreamWrapper wrapper = null, IRestClientErrorHandler handler = null)
-                : base(auth, new Configuration(), handler, wrapper, "v2/") { }
+            internal Client(Auth auth, IStreamWrapper wrapper = null, IRestClientErrorHandler handler = null, string address = "https://unused.test/bridge/", string prefix = "v2/")
+                : base(auth, new Configuration(address), handler, wrapper, prefix) { }
             protected override async Task<HttpResponseMessage> SendResourceDownloadRequestAsync(HttpRequestMessage request, CancellationToken token)
             {
                 Calls++; Uri = request.RequestUri; Method = request.Method;

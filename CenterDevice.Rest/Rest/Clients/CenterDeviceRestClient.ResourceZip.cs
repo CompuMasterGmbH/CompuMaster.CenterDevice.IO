@@ -17,7 +17,7 @@ namespace CenterDevice.Rest.Clients
             token.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(id) || id == "." || id == "..")
                 throw new ArgumentException("The resource identifier is missing or is a relative path segment.", nameof(id));
-            var uri = new Uri(new Uri(CustomOptionBaseAddress), ApiVersionPrefix + resource + "/" + Uri.EscapeDataString(id));
+            var uri = BuildResourceDownloadUri(ApiVersionPrefix + resource + "/" + Uri.EscapeDataString(id));
             var json = JsonConvert.SerializeObject(body);
             return OpenResourceDownloadAsync(userId, () =>
             {

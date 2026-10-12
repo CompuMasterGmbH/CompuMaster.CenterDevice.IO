@@ -1,6 +1,7 @@
 ﻿using CenterDevice.Rest.Clients.Documents;
 using CenterDevice.Rest.Exceptions;
 using CenterDevice.Rest.Utils;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,6 +20,10 @@ namespace CenterDevice.Rest.Clients
         private static readonly HttpClient ResourceDownloadTransport = new HttpClient(
             new CenterDeviceHttpMessageHandler(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false }, retryReads: false))
         { Timeout = Timeout.InfiniteTimeSpan };
+
+        // Preserve the same base-directory and resource-prefix rules as legacy REST requests.
+        internal Uri BuildResourceDownloadUri(string resource)
+            => client.BuildUri(CreateRestRequest(resource, Method.Get));
 
         /// <summary>Sends a resource download without buffering its body or following redirects.</summary>
         /// <param name="request">The authorized resource request.</param>

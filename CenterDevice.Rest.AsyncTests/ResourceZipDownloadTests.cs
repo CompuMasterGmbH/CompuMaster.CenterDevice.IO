@@ -19,6 +19,15 @@ namespace CenterDevice.Rest.AsyncTests
     [TestFixture]
     public class ResourceZipDownloadTests
     {
+        [Test, Combinatorial]
+        public async Task ConfiguredBridgePathSurvivesBaseAndApiPrefixSeparators(
+            [Values("collection", "folder")] string resource, [Values(false, true)] bool trailing, [Values(false, true)] bool leading)
+        {
+            var state = new State { BaseAddress = "https://unused.test/bridge" + (trailing ? "/" : ""), Prefix = (leading ? "/" : "") + "v2/" };
+            using (await Open(state, resource, id: "part/with?query")) { }
+            Assert.That(state.Uri.AbsoluteUri, Is.EqualTo("https://unused.test/bridge/v2/" + resource + "/part%2Fwith%3Fquery"));
+        }
+
         [TestCase("collection", false, false), TestCase("collection", true, false)]
         [TestCase("collection", false, true), TestCase("collection", true, true)]
         [TestCase("folder", false, false), TestCase("folder", true, false)]
@@ -155,19 +164,21 @@ namespace CenterDevice.Rest.AsyncTests
 
         private sealed class Config : IRestClientConfiguration
         {
-            public string BaseAddress => "https://unused.test/bridge/";
+            private readonly string address;
+            internal Config(string address) { this.address = address; }
+            public string BaseAddress => address;
             public string UserAgent => "resource-zip-tests";
         }
         private sealed class CollectionClient : CollectionRestClient
         {
             private readonly State state;
-            internal CollectionClient(State state) : base(state, new Config(), null, "v2/") { this.state = state; }
+            internal CollectionClient(State state) : base(state, new Config(state.BaseAddress), null, state.Prefix) { this.state = state; }
             protected override Task<HttpResponseMessage> SendResourceDownloadRequestAsync(HttpRequestMessage request, CancellationToken token) => state.Send(request, token);
         }
         private sealed class FolderClient : FolderRestClient
         {
             private readonly State state;
-            internal FolderClient(State state) : base(state, new Config(), null, "v2/") { this.state = state; }
+            internal FolderClient(State state) : base(state, new Config(state.BaseAddress), null, state.Prefix) { this.state = state; }
             protected override Task<HttpResponseMessage> SendResourceDownloadRequestAsync(HttpRequestMessage request, CancellationToken token) => state.Send(request, token);
         }
         private sealed class State : IAsyncOAuthInfoProvider
@@ -178,6 +189,7 @@ namespace CenterDevice.Rest.AsyncTests
             internal HttpMethod Method;
             internal CancellationToken Token, AuthorizationToken;
             internal HttpStatusCode Status = HttpStatusCode.OK;
+            internal string BaseAddress = "https://unused.test/bridge/", Prefix = "v2/";
             internal readonly LazyContent Content = new LazyContent();
             internal bool Pending;
             internal readonly TaskCompletionSource<bool> Entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

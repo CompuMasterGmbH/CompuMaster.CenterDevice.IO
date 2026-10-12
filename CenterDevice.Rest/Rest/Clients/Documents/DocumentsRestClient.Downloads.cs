@@ -46,7 +46,7 @@ namespace CenterDevice.Rest.Clients.Documents
             cancellationToken.ThrowIfCancellationRequested();
             var json = JsonConvert.SerializeObject(new { action = "download", @params = new
                 { documents = selected, representation = representation == DocumentDownloadRepresentation.Pdf ? "pdf" : "original", stream } });
-            var uri = new Uri(new Uri(CustomOptionBaseAddress), URI_RESOURCE);
+            var uri = BuildResourceDownloadUri(URI_RESOURCE);
             var owned = await OpenResourceDownloadAsync(userId, () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, uri);
