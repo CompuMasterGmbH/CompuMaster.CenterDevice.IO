@@ -12,7 +12,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         [TestCase("hidden"), TestCase("external"), TestCase("empty"), TestCase("missing-current"), TestCase("omitted"), TestCase("null-document")]
         public void UnverifiedCollectionReferencesRejectBeforeAnyDestructiveCallback(string problem)
         {
-            var document = new DocumentFullMetadata { Collections = new SharingInfo { Visible = new List<string> { "first", "second" } } };
+            var document = new DocumentFullMetadata { Id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", Collections = new SharingInfo { Visible = new List<string> { "first", "second" } } };
             if (problem == "hidden") document.Collections.NotVisibleCount = 1;
             if (problem == "external") document.Collections.Visible.Add("unowned");
             if (problem == "empty") document.Collections.Visible.Clear();
@@ -31,9 +31,22 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         [Test]
         public void TwoVerifiedOwnedCollectionReferencesPermitCleanupInEitherScope()
         {
-            var document = new DocumentFullMetadata { Collections = new SharingInfo { Visible = new List<string> { "second", "first" } } };
+            var document = new DocumentFullMetadata { Id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", Collections = new SharingInfo { Visible = new List<string> { "second", "first" } } };
             DocumentVersionBridgeTests.RequireOwnedCollectionReferences(document, "first", new[] { "first", "second" });
             DocumentVersionBridgeTests.RequireOwnedCollectionReferences(document, "second", new[] { "first", "second" });
+        }
+
+        [TestCase(null), TestCase(""), TestCase(" "), TestCase("../trash"), TestCase("document?other")]
+        public void MissingOrPathLikeDocumentIdentityCannotDispatchDeletion(string id)
+        {
+            var document = new DocumentFullMetadata { Id = id, Collections = new SharingInfo { Visible = new List<string> { "first", "second" } } };
+            var erased = false;
+            Assert.Catch<Exception>((Action)(() =>
+            {
+                DocumentVersionBridgeTests.RequireOwnedCollectionReferences(document, "first", new[] { "first", "second" });
+                erased = true;
+            }));
+            Assert.That(erased, Is.False);
         }
     }
 }
