@@ -12,7 +12,7 @@ namespace CenterDevice.Rest.Clients.Workflows
 {
     /// <summary>Executes explicitly selected direct workflow commands using existing authorization and transport.</summary>
     /// <remarks>Participation, visibility, creator rights, completion state, metadata requirements and finalizing/sharing side effects remain server-enforced. No state is inferred or fetched to authorize a command.</remarks>
-    public class WorkflowsRestClient : CenterDeviceRestClient
+    public partial class WorkflowsRestClient : CenterDeviceRestClient
     {
         /// <summary>Initializes a workflow client using existing authorization and transport.</summary>
         /// <param name="oauthInfoProvider">The authorization provider.</param>
