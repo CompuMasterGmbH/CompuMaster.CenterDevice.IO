@@ -1,0 +1,13 @@
+﻿# Tenant settings contracts
+
+Additive `TenantSettingsRestClient.GetTenantSettingsDetails`/`Async` and complete-update overloads of `UpdateTenantSettings`/`Async` cover API 2.29 sections 5.13.1/5.13.2. Existing getters, interfaces, models and single-setting overloads retain their previous behavior. Authentication context and explicitly selected tenant/current remain separate.
+
+Read results retain the full setting-name map with immutable original user/role selections, nullable values and nullable enabled indications. Here `enabled` means that an administrator may edit a setting; it does not say that the feature is active or that the caller has action rights. Missing users, roles or editability stay unknown; explicit empty arrays and false remain intact. Complete defensive raw copies retain future setting names and metadata.
+
+Typed updates cover auditing, archiving, unarchiving, non-owner document deletion, non-owner ownership transfer, non-owner collection sharing and MFA requirements. Each supplied known setting must contain complete users and roles arrays. Two empty arrays are explicit; omitted settings stay unchanged. Selections and complete raw JSON are copied before authorization. Typed null setters omit a setting; ambiguous null or read-only value/enabled response metadata is rejected for known updates. Future setting JSON is preserved for server validation.
+
+The server enforces administrator access, setting editability, role/user restrictions and tenant feature availability. Settings do not universally override minimum owner rights: empty document-deletion/transfer/sharing selections do not take away the respective owner rights. Auditing still requires collection ownership and the tenant feature. Collection sharing and MFA have their distinct documented role constraints. The client does not infer current user roles, fetch/edit existing settings or grant permissions locally. MFA selections can temporarily revoke access for users without MFA; no defaults are inserted.
+
+GET requires HTTP 200 and PUT HTTP 204. Known shape errors, duplicate JSON properties and trailing content retain inner diagnostics on successful reads. Native cancellation reaches authorization/admission/I/O; no speculative update replay or follow-up is added. Cancellation cannot establish that no update occurred.
+
+Isolated fixtures/private TCP loopback verify original permission metadata, complete updates, snapshot semantics, legacy compatibility and native cancellation. They do not change real tenant configuration or establish administrator/feature/server acceptance. Actual bounded reversible acceptance, current post-merge matrix, publication and DMS adoption remain separate #20/#15 criteria.
