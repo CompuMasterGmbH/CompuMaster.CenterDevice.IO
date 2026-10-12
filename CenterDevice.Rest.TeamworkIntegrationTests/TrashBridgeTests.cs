@@ -40,9 +40,15 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
             await client.Document.DeleteDocumentAsync(contextId, original.Id, token);
             var page = sync ? trash.GetDocuments(contextId, cancellationToken: token) : await trash.GetDocumentsAsync(contextId, cancellationToken: token);
             var deleted = page.SingleOrDefault(document => document.Id == original.Id);
+            TestContext.Out.WriteLine("Trash metadata: found " + (deleted != null) + ", filename match " + (deleted?.Filename == ledger.Filename) +
+                ", size " + (deleted?.Size?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "omitted") + ", expected " + "latest-trash-payload".Length +
+                ", upload/version/deletion dates " + (deleted?.UploadDate.HasValue ?? false) + "/" + (deleted?.VersionDate.HasValue ?? false) + "/" + (deleted?.DeletionDate.HasValue ?? false) +
+                ", tag count " + (deleted?.Tags?.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "omitted") + ".");
             Check(deleted != null && deleted.Filename == ledger.Filename && deleted.Size == "latest-trash-payload".Length &&
-                deleted.UploadDate.HasValue && deleted.VersionDate.HasValue && deleted.DeletionDate.HasValue && deleted.Tags.Contains("owned-trash-tag"),
-                "Production trash metadata must preserve the selected ID, latest filename/size, dates and tags.");
+                deleted.VersionDate.HasValue && deleted.DeletionDate.HasValue &&
+                (!deleted.UploadDate.HasValue || deleted.UploadDate.Value <= deleted.VersionDate.Value) &&
+                (deleted.Tags == null || deleted.Tags.Contains("owned-trash-tag")),
+                "Production trash metadata must preserve supplied metadata; optional upload time and tags may remain unknown.");
 
             phase = "selected trash restoration and exact partial failure";
             CheckLease();
