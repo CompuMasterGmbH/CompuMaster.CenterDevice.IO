@@ -56,6 +56,9 @@ namespace CenterDevice.Rest.Clients
         /// <summary>Gets a client for the authenticated caller's statistics.</summary>
         public Rest.Clients.Statistics.StatisticsRestClient Statistics => new Rest.Clients.Statistics.StatisticsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
+        /// <summary>Gets a client for the authenticated caller's explicit search-term history.</summary>
+        public Rest.Clients.SearchHistory.SearchHistoryRestClient SearchHistory => new Rest.Clients.SearchHistory.SearchHistoryRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         /// <summary>Gets a client for visible collection audit logs.</summary>
         public Rest.Clients.AuditLog.AuditLogRestClient AuditLog => new Rest.Clients.AuditLog.AuditLogRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
