@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +15,10 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <summary>Adds tags to selected documents using asynchronous HTTP I/O.</summary>
         /// <param name="userId">The authentication-context user identifier.</param>
         /// <param name="documentIds">The nonempty selected document IDs, snapshotted before authorization.</param>
-        /// <param name="tags">The nonempty tag sequence, preserving spelling and whitespace for server-side normalization.</param>
+        /// <param name="tags">The nonempty tag sequence; additions trim whitespace, omit empty tags and retain the first case-insensitive spelling.</param>
         /// <param name="cancellationToken">Cancels authorization, admission and active HTTP I/O.</param>
         /// <returns>Complete success or the exact server-reported failed document IDs.</returns>
-        /// <remarks>Admin, internal or external roles and visible documents are required. The server trims and ignores empty tags and compares existing tags case-insensitively. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried.</remarks>
+        /// <remarks>Admin, internal or external roles and visible documents are required. The server trims and ignores empty tags and compares existing tags case-insensitively. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Cancellation does not prove that the server made no changes.</remarks>
         /// <exception cref="ArgumentNullException">A required sequence is null.</exception>
         /// <exception cref="ArgumentException">The document selection or value sequence is invalid.</exception>
         /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
@@ -27,7 +27,7 @@ namespace CenterDevice.Rest.Clients.Documents
         {
             cancellationToken.ThrowIfCancellationRequested();
             var selected = SnapshotDocumentIds(documentIds, nameof(documentIds));
-            var values = SnapshotDocumentCommandValues(tags, nameof(tags), false);
+            var values = SnapshotDocumentCommandValues(tags, nameof(tags), false, normalizeTags: true);
             return ExecuteDocumentListCommandAsync(userId, URI_RESOURCE, "add-tag",
                 new { documents = selected, tags = values }, selected, cancellationToken);
         }
@@ -43,7 +43,7 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="tags">The nonempty tag sequence, preserving spelling and whitespace for server-side normalization.</param>
         /// <param name="cancellationToken">Cancels authorization, admission and active HTTP I/O.</param>
         /// <returns>Complete success or the exact server-reported failed document IDs.</returns>
-        /// <remarks>Admin, internal or external roles and visible documents are required. The server trims and ignores empty tags and compares existing tags case-insensitively. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried.</remarks>
+        /// <remarks>Admin, internal or external roles and visible documents are required. Tag spelling is sent unchanged; matching and visibility are enforced by the server. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Cancellation does not prove that the server made no changes.</remarks>
         /// <exception cref="ArgumentNullException">A required sequence is null.</exception>
         /// <exception cref="ArgumentException">The document selection or value sequence is invalid.</exception>
         /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
@@ -68,7 +68,7 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="locks">The nonempty supported lock names; API 2.29 supports create-new-version only.</param>
         /// <param name="cancellationToken">Cancels authorization, admission and active HTTP I/O.</param>
         /// <returns>Complete success or the exact server-reported failed document IDs.</returns>
-        /// <remarks>Admin, internal or external roles and a visible document are required; another user's existing lock prevents locking. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Existing AddLock/RemoveLock overloads and their defaults are unchanged.</remarks>
+        /// <remarks>Admin, internal or external roles and a visible document are required; another user's existing lock prevents locking. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Cancellation does not prove that the server made no changes. Existing AddLock/RemoveLock overloads and their defaults are unchanged.</remarks>
         /// <exception cref="ArgumentNullException">A required sequence is null.</exception>
         /// <exception cref="ArgumentException">The document selection or value sequence is invalid.</exception>
         /// <exception cref="NotSupportedException">A requested lock is unsupported by API 2.29.</exception>
@@ -94,7 +94,7 @@ namespace CenterDevice.Rest.Clients.Documents
         /// <param name="locks">The nonempty supported lock names; API 2.29 supports create-new-version only.</param>
         /// <param name="cancellationToken">Cancels authorization, admission and active HTTP I/O.</param>
         /// <returns>Complete success or the exact server-reported failed document IDs.</returns>
-        /// <remarks>The lock owner or document owner can unlock; admins can unlock any visible document. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Existing AddLock/RemoveLock overloads and their defaults are unchanged.</remarks>
+        /// <remarks>The lock owner or document owner can unlock; admins can unlock any visible document. HTTP 200 can carry partial failures; HTTP 204 indicates complete success. No uncertain write or partial failure is automatically retried. Cancellation does not prove that the server made no changes. Existing AddLock/RemoveLock overloads and their defaults are unchanged.</remarks>
         /// <exception cref="ArgumentNullException">A required sequence is null.</exception>
         /// <exception cref="ArgumentException">The document selection or value sequence is invalid.</exception>
         /// <exception cref="NotSupportedException">A requested lock is unsupported by API 2.29.</exception>
@@ -111,4 +111,3 @@ namespace CenterDevice.Rest.Clients.Documents
 
     }
 }
-

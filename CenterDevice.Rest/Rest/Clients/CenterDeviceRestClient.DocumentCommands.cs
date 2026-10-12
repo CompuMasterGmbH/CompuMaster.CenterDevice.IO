@@ -1,4 +1,4 @@
-using CenterDevice.Rest.Clients.Documents;
+﻿using CenterDevice.Rest.Clients.Documents;
 using CenterDevice.Rest.Exceptions;
 using CenterDevice.Rest.ResponseHandler;
 using Newtonsoft.Json.Linq;
@@ -23,6 +23,7 @@ namespace CenterDevice.Rest.Clients
             request.AddJsonBody(new { action, @params = parameters });
             var authorization = await GetOAuthInfoAsync(userId, token).ConfigureAwait(false);
             var response = await ExecuteAsync(authorization, request, token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
             ValidateResponse(response, new StatusCodeResponseHandler(new List<HttpStatusCode> { HttpStatusCode.OK, HttpStatusCode.NoContent }));
             if (response.StatusCode == HttpStatusCode.NoContent) return new DocumentCommandResult(new string[0]);
             try
@@ -49,7 +50,7 @@ namespace CenterDevice.Rest.Clients
             return result;
         }
 
-        internal static string[] SnapshotDocumentCommandValues(IEnumerable<string> values, string parameter, bool locks)
+        internal static string[] SnapshotDocumentCommandValues(IEnumerable<string> values, string parameter, bool locks, bool normalizeTags = false)
         {
             if (values == null) throw new ArgumentNullException(parameter);
             var result = values.ToArray();
@@ -57,7 +58,12 @@ namespace CenterDevice.Rest.Clients
                 throw new ArgumentException("A nonempty sequence without null values is required.", parameter);
             if (locks && result.Any(value => value != RestApiConstants.CREATE_NEW_VERSION))
                 throw new NotSupportedException("API 2.29 supports only the create-new-version document lock.");
-            // Tag spelling/whitespace and case-insensitive deduplication belong to the server contract.
+            if (normalizeTags)
+            {
+                // Apply API 2.29 normalization before sending: some bridges do not deduplicate a single batch.
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                return result.Select(value => value.Trim()).Where(value => value.Length > 0 && seen.Add(value)).ToArray();
+            }
             return result;
         }
 
@@ -66,4 +72,3 @@ namespace CenterDevice.Rest.Clients
                 (Guid.TryParse(first, out var left) && Guid.TryParse(second, out var right) && left == right);
     }
 }
-

@@ -49,7 +49,12 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         public async Task DownloadRepresentationsThroughTeamwork(bool synchronous)
             => await RunWithOwnedCollection(synchronous, true);
 
-        private async Task RunWithOwnedCollection(bool synchronous, bool representations)
+        [TestCase(false), TestCase(true)]
+        [Explicit("Requires coordinated exclusive access across local sessions and CI until verified cleanup.")]
+        public async Task TagAndLockCommandsThroughTeamwork(bool synchronous)
+            => await RunWithOwnedCollection(synchronous, false, true);
+
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -87,7 +92,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
                     phase = synchronous ? "sync document operations" : "async document operations";
-                    if (representations) await VerifyRepresentations(synchronous, timeout.Token);
+                    if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
+                    else if (representations) await VerifyRepresentations(synchronous, timeout.Token);
                     else await VerifyVersions(synchronous, timeout.Token);
                 }
                 catch (Exception error) { originalFailure = error; }
@@ -106,10 +112,117 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 // Retain both exceptions in memory; report separate sanitized diagnostics.
                 if (originalFailure != null || cleanupFailure != null)
                     Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup: " + Diagnostic(cleanupFailure));
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (representations
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (tagsAndLocks
+                    ? ": selected/bulk tags, exact partial failures, owner lock/unlock, cancellation and complete cleanup verified."
+                    : representations
                     ? ": selected historical/current fulltext and ZIP contents verified; PDF/preview/unsupported MP4 outcomes recorded; cancellation and complete cleanup verified."
                     : ": identity, payload/history, repeat revert, current-version removal, non-reused numbers, delete-all rejection, cancellation and complete cleanup verified."));
             }
+        }
+
+        private async Task VerifyTagsAndLocks(bool sync, CancellationToken token)
+        {
+            ledger.Filename = "tags-locks-" + Guid.NewGuid().ToString("N") + ".txt";
+            SaveLedger();
+            CheckLease();
+            var upload = await client.Documents.UploadDocumentAsync(contextId, ledger.Filename, () => Payload("Owned tag/lock fixture"), null,
+                new List<string> { ledger.Id }, null, token);
+            ledger.Documents.Add(upload.Id);
+            SaveLedger();
+            var doc = await client.Document.GetDocumentMetadataAsync(contextId, upload.Id, token);
+            Check(doc.Owner == ownerId && doc.Filename == ledger.Filename, "Uploaded document ownership/identity must agree.");
+            var missing = Guid.NewGuid().ToString();
+            try { await client.Document.GetDocumentMetadataAsync(contextId, missing, token); throw new VerificationFailure("Negative-case document must be absent."); }
+            catch (NotFoundException) { }
+            Exception commandFailure = null;
+            try
+            {
+                phase = "selected tag addition";
+                CheckLease();
+                var added = sync ? client.Document.AddTags(contextId, doc.Id, new[] { " red ", "blue", "RED", " ", "" }, token)
+                    : await client.Document.AddTagsAsync(contextId, doc.Id, new[] { " red ", "blue", "RED", " ", "" }, token);
+                Check(added.AllSucceeded, "Owned tag addition must succeed completely.");
+                var tagged = await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: token);
+                Check(tagged.Id == doc.Id, "Tag metadata must retain the selected document ID.");
+                TestContext.Out.WriteLine("Owned tag outcome: count " + (tagged.Tags?.Count.ToString(CultureInfo.InvariantCulture) ?? "omitted") +
+                    ", red " + (tagged.Tags?.Contains("red", StringComparer.OrdinalIgnoreCase) ?? false) +
+                    ", blue " + (tagged.Tags?.Contains("blue", StringComparer.OrdinalIgnoreCase) ?? false) + ".");
+                Check(tagged.Tags != null && tagged.Tags.Count == 2 && tagged.Tags.Contains("red", StringComparer.OrdinalIgnoreCase) && tagged.Tags.Contains("blue", StringComparer.OrdinalIgnoreCase),
+                    "The server must trim/ignore empty tags and avoid case-insensitive duplicates.");
+                phase = "bulk tag partial failure";
+                CheckLease();
+                var partial = sync ? client.Documents.AddTags(contextId, new[] { doc.Id, missing }, new[] { "second" }, token)
+                    : await client.Documents.AddTagsAsync(contextId, new[] { doc.Id, missing }, new[] { "second" }, token);
+                Check(!partial.AllSucceeded && partial.FailedDocuments.SequenceEqual(new[] { missing }), "Bulk tag failures must identify exactly the absent document.");
+                Check((await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: token)).Tags.Contains("second"),
+                    "Bulk partial success must retain the successfully added tag.");
+                phase = "selected and bulk tag removal";
+                CheckLease();
+                var removed = sync ? client.Document.RemoveTags(contextId, doc.Id, new[] { "second" }, token)
+                    : await client.Document.RemoveTagsAsync(contextId, doc.Id, new[] { "second" }, token);
+                Check(removed.AllSucceeded, "Selected tag removal must succeed.");
+                removed = sync ? client.Documents.RemoveTags(contextId, new[] { doc.Id }, new[] { "red", "blue" }, token)
+                    : await client.Documents.RemoveTagsAsync(contextId, new[] { doc.Id }, new[] { "red", "blue" }, token);
+                Check(removed.AllSucceeded, "Bulk tag removal must succeed.");
+                var emptyTags = (await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: token)).Tags;
+                Check(emptyTags == null || emptyTags.Count == 0, "Owned test tags must be removed.");
+                phase = "selected lock and bulk unlock";
+                CheckLease();
+                var locked = sync ? client.Document.AddLocks(contextId, doc.Id, new[] { "create-new-version" }, token)
+                    : await client.Document.AddLocksAsync(contextId, doc.Id, new[] { "create-new-version" }, token);
+                Check(locked.AllSucceeded, "Owned document lock must succeed.");
+                var state = await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: token);
+                Check(state.Locks != null && state.Locks.Contains("create-new-version") && state.LockedBy == ownerId,
+                    "Lock metadata must retain the actual owning CenterDevice user identity.");
+                var unlocked = sync ? client.Documents.RemoveLocks(contextId, new[] { doc.Id }, new[] { "create-new-version" }, token)
+                    : await client.Documents.RemoveLocksAsync(contextId, new[] { doc.Id }, new[] { "create-new-version" }, token);
+                Check(unlocked.AllSucceeded, "Bulk unlock must succeed for the owned lock.");
+                phase = "bulk lock partial failure and selected unlock";
+                CheckLease();
+                var lockPartial = sync ? client.Documents.AddLocks(contextId, new[] { doc.Id, missing }, new[] { "create-new-version" }, token)
+                    : await client.Documents.AddLocksAsync(contextId, new[] { doc.Id, missing }, new[] { "create-new-version" }, token);
+                Check(!lockPartial.AllSucceeded && lockPartial.FailedDocuments.SequenceEqual(new[] { missing }), "Bulk lock failures must retain exact document IDs.");
+                unlocked = sync ? client.Document.RemoveLocks(contextId, doc.Id, new[] { "create-new-version" }, token)
+                    : await client.Document.RemoveLocksAsync(contextId, doc.Id, new[] { "create-new-version" }, token);
+                Check(unlocked.AllSucceeded, "Selected unlock must succeed.");
+                using (var canceled = new CancellationTokenSource())
+                {
+                    canceled.Cancel();
+                    await ExpectCanceled(() => client.Document.AddTagsAsync(contextId, doc.Id, new[] { "canceled" }, canceled.Token));
+                    await ExpectCanceled(() => client.Document.AddLocksAsync(contextId, doc.Id, new[] { "create-new-version" }, canceled.Token));
+                }
+                var final = await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: token);
+                Check((final.Tags == null || final.Tags.Count == 0) && (final.Locks == null || final.Locks.Count == 0), "Cancellation must not add tags or locks.");
+            }
+            catch (Exception error) { commandFailure = error; throw; }
+            finally
+            {
+                // Independent cleanup works even if the main request token expired after committing a lock.
+                try
+                {
+                    using (var cleanup = new CancellationTokenSource(TimeSpan.FromMinutes(2)))
+                    {
+                        var state = await client.Document.GetDocumentMetadataAsync<TagLockMetadata>(contextId, doc.Id, cancellationToken: cleanup.Token);
+                        if (state.Locks != null && state.Locks.Count > 0)
+                        {
+                            Check(state.LockedBy == ownerId, "Cleanup must not remove a foreign user's lock.");
+                            var cleared = await client.Document.RemoveLocksAsync(contextId, doc.Id, state.Locks, cleanup.Token);
+                            Check(cleared.AllSucceeded, "Test-owned locks must be removed before deleting the document.");
+                        }
+                    }
+                }
+                catch (Exception cleanupError) when (commandFailure != null)
+                { throw new AggregateException("Document command and owned-lock cleanup both failed.", commandFailure, cleanupError); }
+            }
+        }
+
+        public sealed class TagLockMetadata
+        {
+            public string Id { get; set; }
+            public List<string> Tags { get; set; }
+            public List<string> Locks { get; set; }
+            [System.Text.Json.Serialization.JsonPropertyName("locked-by")]
+            public string LockedBy { get; set; }
         }
 
         private async Task VerifyRepresentations(bool sync, CancellationToken token)
@@ -476,6 +589,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         private static string Diagnostic(Exception error)
         {
             if (error == null) return "none";
+            if (error is AggregateException aggregate) return "AggregateException [" + string.Join("; ", aggregate.InnerExceptions.Select(Diagnostic)) + "]";
             if (error is VerificationFailure) return error.Message;
             if (error is InvalidResponseDataException && error.InnerException is InvalidDataException invalid)
             {

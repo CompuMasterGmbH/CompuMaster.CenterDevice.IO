@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace CenterDevice.Rest.Clients.Documents
@@ -15,4 +15,3 @@ namespace CenterDevice.Rest.Clients.Documents
         public bool AllSucceeded => FailedDocuments.Count == 0;
     }
 }
-
