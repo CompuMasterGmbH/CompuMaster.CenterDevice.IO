@@ -59,7 +59,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         public async Task RecoverOwnedResourcesThroughTeamwork()
             => await RunWithOwnedCollection(false, false, cleanupOnly: true);
 
-        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false, bool trashCommands = false)
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false, bool trashCommands = false, bool documentContracts = false)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -99,7 +99,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
                     phase = synchronous ? "sync document operations" : "async document operations";
-                    if (trashCommands) await VerifyTrashCommands(synchronous, timeout.Token);
+                    if (documentContracts) await VerifyDocumentContracts(synchronous, timeout.Token);
+                    else if (trashCommands) await VerifyTrashCommands(synchronous, timeout.Token);
                     else if (copyAndMove) await VerifyCopyAndMove(synchronous, timeout.Token);
                     else if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
                     else if (representations) await VerifyRepresentations(synchronous, timeout.Token);
