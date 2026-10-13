@@ -124,7 +124,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 if (originalFailure != null || cleanupFailure != null)
                     Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup phase: " + cleanupPhase + "; cleanup: " + Diagnostic(cleanupFailure));
                 if (cleanupOnly) { TestContext.Out.WriteLine("Owned resource recovery and ledger absence verified."); return; }
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (trashCommands
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (documentContracts
+                    ? ": configured uploads/version, duplicate outcome, selected/current metadata, extended set/unset, latest-version search and complete cleanup verified."
+                    : trashCommands
                     ? ": own-trash metadata, selected restore/partial failures, stable identity/history/payload, selected permanent erasure, cancellation and complete cleanup verified."
                     : copyAndMove
                     ? ": single/bulk and recursive/flat directory copies, new identities, source/history/payload preservation, file moves, cancellation and complete cleanup verified."
