@@ -4,6 +4,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--source-ref', required=True, help='Exact immutable commit containing the audited source.')
+parser.add_argument('--mapping', type=Path, help='Optional explicit public-workflow map; defaults to current-map.json.')
 parser.add_argument('--output', type=Path, required=True, help='CSV output path; never overwrites the historical baseline.')
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[2]
@@ -29,7 +30,15 @@ with tarfile.open(fileobj=io.BytesIO(archive)) as content:
                 text = data.decode('cp1252')
             files[item.name] = (text, hashlib.sha256(data).hexdigest())
 root = Path(__file__).resolve().parent
-mapping = json.loads((root / 'current-map.json').read_text(encoding='utf-8-sig'))
+def unique_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise SystemExit('Duplicate current-map section or field: ' + key)
+        result[key] = value
+    return result
+
+mapping = json.loads((args.mapping or root / 'current-map.json').read_text(encoding='utf-8-sig'), object_pairs_hook=unique_pairs)
 with (root / 'coverage.csv').open(encoding='utf-8-sig', newline='') as baseline:
     rows = list(csv.DictReader(baseline))
 sections = [row['Section'] for row in rows]
