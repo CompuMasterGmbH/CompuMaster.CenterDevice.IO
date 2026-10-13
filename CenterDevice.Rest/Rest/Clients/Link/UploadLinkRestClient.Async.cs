@@ -66,7 +66,7 @@ namespace CenterDevice.Rest.Clients.Link
 #pragma warning restore IDE0028 // Initialisierung der Sammlung vereinfachen
             if (collectionId != null) parameters[RestApiConstants.COLLECTION] = collectionId;
             if (name != null) parameters[RestApiConstants.NAME] = name;
-            if (tags != null) parameters[RestApiConstants.TAGS] = JsonConvert.SerializeObject(tags);
+            if (tags != null) parameters[RestApiConstants.TAGS] = new JArray(tags);
             if (expiryDate.HasValue) parameters[RestApiConstants.EXPIRY_DATE] = expiryDate;
             if (maxDocuments.HasValue) parameters[RestApiConstants.MAX_DOCUMENTS] = maxDocuments;
             if (password != null) parameters[RestApiConstants.PASSWORD] = password;
