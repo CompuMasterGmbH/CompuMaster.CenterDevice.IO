@@ -59,7 +59,7 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
         public async Task RecoverOwnedResourcesThroughTeamwork()
             => await RunWithOwnedCollection(false, false, cleanupOnly: true);
 
-        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false, bool trashCommands = false, bool documentContracts = false)
+        private async Task RunWithOwnedCollection(bool synchronous, bool representations, bool tagsAndLocks = false, bool copyAndMove = false, bool cleanupOnly = false, bool trashCommands = false, bool documentContracts = false, bool resourceContracts = false)
         {
             RequireLease();
             using (var transport = CenterDeviceHttpTransport.CreateHttpClient(new System.Net.Http.HttpClientHandler()))
@@ -99,7 +99,8 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     SaveLedger();
                     await VerifyCollection(timeout.Token);
                     phase = synchronous ? "sync document operations" : "async document operations";
-                    if (documentContracts) await VerifyDocumentContracts(synchronous, timeout.Token);
+                    if (resourceContracts) await VerifyResourceContracts(synchronous, timeout.Token);
+                    else if (documentContracts) await VerifyDocumentContracts(synchronous, timeout.Token);
                     else if (trashCommands) await VerifyTrashCommands(synchronous, timeout.Token);
                     else if (copyAndMove) await VerifyCopyAndMove(synchronous, timeout.Token);
                     else if (tagsAndLocks) await VerifyTagsAndLocks(synchronous, timeout.Token);
@@ -124,7 +125,9 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                 if (originalFailure != null || cleanupFailure != null)
                     Assert.Fail("Phase: " + phase + "; failure: " + Diagnostic(originalFailure) + "; cleanup phase: " + cleanupPhase + "; cleanup: " + Diagnostic(cleanupFailure));
                 if (cleanupOnly) { TestContext.Out.WriteLine("Owned resource recovery and ledger absence verified."); return; }
-                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (documentContracts
+                TestContext.Out.WriteLine((synchronous ? "Sync" : "Async") + (resourceContracts
+                    ? ": owned comments/tags, typed timeline/filter/cursor, original legacy ZIP, selected/bulk trash/direct erasure and complete cleanup verified."
+                    : documentContracts
                     ? ": configured uploads/version, duplicate outcome, selected/current metadata, extended set/unset, latest-version search and complete cleanup verified."
                     : trashCommands
                     ? ": own-trash metadata, selected restore/partial failures, stable identity/history/payload, selected permanent erasure, cancellation and complete cleanup verified."
