@@ -26,22 +26,22 @@
   },
   "5.2.6": {
     "entryPoint": "DocumentRestClient.MoveDocumentToTrash",
-    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR85; complete actual role/removal acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.7": {
     "entryPoint": "DocumentsRestClient.MoveDocumentsToTrash",
-    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR85; complete actual role/removal acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.8": {
     "entryPoint": "DocumentRestClient.EraseDocument",
-    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR85; complete actual role/removal acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.9": {
     "entryPoint": "DocumentsRestClient.EraseDocuments",
-    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR85; complete actual role/removal acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.10": {
@@ -80,13 +80,13 @@
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.17": {
-    "entryPoint": "",
-    "sourceStatus": "Missing deprecated GET route; modern POST ZIP replacement is implemented.",
+    "entryPoint": "DocumentsRestClient.DownloadDocumentsAsZipLegacy",
+    "sourceStatus": "Explicitly obsolete GET workflow independently reviewed and merged in PR89; actual ZIP/PDF/role acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.18": {
-    "entryPoint": "",
-    "sourceStatus": "Missing deprecated GET route; modern POST ZIP replacement is implemented.",
+    "entryPoint": "DocumentsRestClient.DownloadDocumentsAsZipLegacy",
+    "sourceStatus": "Explicitly obsolete GET workflow independently reviewed and merged in PR89; actual ZIP/PDF/role acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.2.19": {
@@ -571,17 +571,17 @@
   },
   "5.15.1": {
     "entryPoint": "TimelineRestClient.SearchTimeline",
-    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR87; complete actual filter/role/cursor acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.15.2": {
     "entryPoint": "TimelineRestClient.ScrollTimeline",
-    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR87; complete actual filter/role/cursor acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.15.3": {
     "entryPoint": "TimelineEventDetails",
-    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "sourceStatus": "Independently reviewed and merged in PR87; complete actual filter/role/cursor acceptance remains separate.",
     "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
   },
   "5.16.1": {
