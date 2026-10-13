@@ -629,6 +629,10 @@ namespace CenterDevice.Rest.TeamworkIntegrationTests
                     .FirstOrDefault(text => (http.Message ?? "").IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0);
                 return "HttpRequestException (" + kind + "; status " + httpStatus + (reason == null ? "" : "; " + reason) + "; methods " + string.Join(",", frames ?? new string[0]) + ")" + (http.InnerException == null ? "" : " [" + Diagnostic(http.InnerException) + "]");
             }
+            if (error is WebException bridge && bridge.Data["CompuMaster.Scopevisio.Teamwork.HttpStatusCode"] is int bridgeStatus
+                && bridgeStatus >= 500 && bridgeStatus <= 599)
+                return "WebException (HTTP " + bridgeStatus + "; " + bridge.Status + ")"
+                    + (bridge.InnerException == null ? "" : " [" + Diagnostic(bridge.InnerException) + "]");
             if (error is AggregateException aggregate) return "AggregateException [" + string.Join("; ", aggregate.InnerExceptions.Select(Diagnostic)) + "]";
             if (error is VerificationFailure) return error.Message;
             if (error is InvalidResponseDataException && error.InnerException is InvalidDataException invalid)
