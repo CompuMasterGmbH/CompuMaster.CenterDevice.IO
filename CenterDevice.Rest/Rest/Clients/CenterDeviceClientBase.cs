@@ -50,6 +50,13 @@ namespace CenterDevice.Rest.Clients
 
         protected abstract string UploadLinkBaseUrl { get; }
 
+        /// <summary>Gets a client for explicit visible document comment workflows.</summary>
+        public Rest.Clients.Comments.CommentsRestClient Comments => new Rest.Clients.Comments.CommentsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
+        /// <summary>Gets a client for the deprecated read-only visible-tag inventory.</summary>
+        /// <remarks>New workflows should use document search with zero rows and a tags facet.</remarks>
+        public Rest.Clients.Tags.TagsRestClient Tags => new Rest.Clients.Tags.TagsRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
+
         /// <summary>Gets a client for the authenticated user's own trash.</summary>
         public Rest.Clients.Trash.TrashRestClient Trash => new Rest.Clients.Trash.TrashRestClient(oAuthInfoProvider, configuration, errorHandler, apiVersionPrefix);
 
