@@ -1,0 +1,847 @@
+﻿{
+  "5.2.1": {
+    "entryPoint": "DocumentsRestClient.UploadConfiguredDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.2": {
+    "entryPoint": "DocumentRestClient.UploadConfiguredVersion",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.3": {
+    "entryPoint": "DocumentRestClient.RevertDocumentVersion",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned version/history acceptance PR25/27; broader roles/locks/archive unverified."
+  },
+  "5.2.4": {
+    "entryPoint": "DocumentRestClient.RenameDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.5": {
+    "entryPoint": "DocumentRestClient.RemoveDocumentVersions",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned version/history acceptance PR25/27; broader roles/locks/archive unverified."
+  },
+  "5.2.6": {
+    "entryPoint": "DocumentRestClient.MoveDocumentToTrash",
+    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.7": {
+    "entryPoint": "DocumentsRestClient.MoveDocumentsToTrash",
+    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.8": {
+    "entryPoint": "DocumentRestClient.EraseDocument",
+    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.9": {
+    "entryPoint": "DocumentsRestClient.EraseDocuments",
+    "sourceStatus": "Implemented candidate PR85; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.10": {
+    "entryPoint": "DocumentRestClient.DownloadDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.11": {
+    "entryPoint": "DocumentRestClient.DownloadDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.12": {
+    "entryPoint": "DocumentRestClient.DownloadDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.13": {
+    "entryPoint": "DocumentRestClient.DownloadPdf",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.14": {
+    "entryPoint": "DocumentRestClient.DownloadMp4",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.15": {
+    "entryPoint": "DocumentRestClient.DownloadFulltext",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.16": {
+    "entryPoint": "DocumentRestClient.DownloadPreviews",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.17": {
+    "entryPoint": "",
+    "sourceStatus": "Missing deprecated GET route; modern POST ZIP replacement is implemented.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.18": {
+    "entryPoint": "",
+    "sourceStatus": "Missing deprecated GET route; modern POST ZIP replacement is implemented.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.19": {
+    "entryPoint": "DocumentsRestClient.DownloadDocumentsAsZip",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.20": {
+    "entryPoint": "DocumentRestClient.GetDocumentDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.21": {
+    "entryPoint": "DocumentsRestClient.GetDocumentPage",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.22": {
+    "entryPoint": "DocumentsRestClient.SearchDocumentDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.23": {
+    "entryPoint": "DocumentRestClient.Share",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.24": {
+    "entryPoint": "DocumentsRestClient.Share",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.25": {
+    "entryPoint": "DocumentRestClient.Unshare",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.26": {
+    "entryPoint": "DocumentsRestClient.Unshare",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.27": {
+    "entryPoint": "DocumentRestClient.AddTags",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.28": {
+    "entryPoint": "DocumentsRestClient.AddTags",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.29": {
+    "entryPoint": "DocumentRestClient.RemoveTags",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.30": {
+    "entryPoint": "DocumentsRestClient.RemoveTags",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.31": {
+    "entryPoint": "DocumentRestClient.AddLocks",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.32": {
+    "entryPoint": "DocumentsRestClient.AddLocks",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.33": {
+    "entryPoint": "DocumentRestClient.RemoveLocks",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.34": {
+    "entryPoint": "DocumentsRestClient.RemoveLocks",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.35": {
+    "entryPoint": "DocumentRestClient.UpdateExtendedMetadata",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded owned document-contract acceptance PR79: 2 cases per Windows framework; broader roles/options unverified."
+  },
+  "5.2.36": {
+    "entryPoint": "DocumentRestClient.TransferOwnership",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.37": {
+    "entryPoint": "DocumentsRestClient.MoveDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.38": {
+    "entryPoint": "DocumentRestClient.CopyDocument",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.2.39": {
+    "entryPoint": "DocumentsRestClient.CopyDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.1": {
+    "entryPoint": "CollectionsRestClient.CreateConfiguredCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.2": {
+    "entryPoint": "CollectionsRestClient.UpdateConfiguration",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.3": {
+    "entryPoint": "CollectionRestClient.AddDocumentsToCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.4": {
+    "entryPoint": "CollectionRestClient.RemoveDocumentsFromCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.5": {
+    "entryPoint": "CollectionRestClient.ShareCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.6": {
+    "entryPoint": "CollectionRestClient.UnshareCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.7": {
+    "entryPoint": "CollectionRestClient.UpdateExtendedMetadata",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.8": {
+    "entryPoint": "CollectionRestClient.EnableAuditing",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.9": {
+    "entryPoint": "CollectionRestClient.OptIn",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.10": {
+    "entryPoint": "CollectionRestClient.OptOut",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.11": {
+    "entryPoint": "CollectionRestClient.ResetAuditing",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.12": {
+    "entryPoint": "CollectionRestClient.ResendAuditingEmail",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.13": {
+    "entryPoint": "CollectionRestClient.UpdateAuditingEmailSettings",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.14": {
+    "entryPoint": "CollectionRestClient.ArchiveCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.15": {
+    "entryPoint": "CollectionRestClient.SetArchiveExpiry",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.16": {
+    "entryPoint": "CollectionRestClient.SetArchivedDateSource",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.17": {
+    "entryPoint": "CollectionRestClient.SetArchiveFrozen",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.18": {
+    "entryPoint": "CollectionRestClient.EraseCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.19": {
+    "entryPoint": "CollectionRestClient.DeleteCollection",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.20": {
+    "entryPoint": "CollectionRestClient.GetCollectionDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.21": {
+    "entryPoint": "CollectionsRestClient.GetCollectionDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.22": {
+    "entryPoint": "CollectionRestClient.DownloadCollectionAsZip",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.3.23": {
+    "entryPoint": "CollectionRestClient.TransferOwnership",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.1": {
+    "entryPoint": "FoldersRestClient.CreateSelectedFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.2": {
+    "entryPoint": "FolderRestClient.RenameFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.3": {
+    "entryPoint": "FoldersRestClient.MoveFolderTo",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.4": {
+    "entryPoint": "FolderRestClient.AddDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.5": {
+    "entryPoint": "FolderRestClient.RemoveDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.6": {
+    "entryPoint": "FolderRestClient.ShareFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.7": {
+    "entryPoint": "FolderRestClient.UnshareFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.8": {
+    "entryPoint": "FolderRestClient.EraseFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.9": {
+    "entryPoint": "FolderRestClient.DeleteFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.10": {
+    "entryPoint": "FolderRestClient.GetFolder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.11": {
+    "entryPoint": "FoldersRestClient.GetConfiguredFolders",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.4.12": {
+    "entryPoint": "FolderRestClient.DownloadFolderAsZip",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.5.1": {
+    "entryPoint": "CommentsRestClient.AddComment",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.5.2": {
+    "entryPoint": "CommentsRestClient.UpdateComment",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.5.3": {
+    "entryPoint": "CommentsRestClient.RemoveComment",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.5.4": {
+    "entryPoint": "CommentsRestClient.GetComment",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.5.5": {
+    "entryPoint": "CommentsRestClient.GetComments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.6.1": {
+    "entryPoint": "LinksRestClient.CreateConfiguredDocumentLink",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.6.2": {
+    "entryPoint": "LinkRestClient.GetLinkDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.6.3": {
+    "entryPoint": "LinkRestClient.ReplaceAccessControl",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.6.4": {
+    "entryPoint": "LinkRestClient.RemoveLink",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.7.1": {
+    "entryPoint": "UploadLinksRestClient.CreateConfiguredUploadLink",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.7.2": {
+    "entryPoint": "UploadLinkRestClient.GetUploadLinkDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.7.3": {
+    "entryPoint": "UploadLinksRestClient.GetUploadLinkDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.7.4": {
+    "entryPoint": "UploadLinkRestClient.UpdateConfiguredUploadLink",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.7.5": {
+    "entryPoint": "UploadLinkRestClient.RemoveUploadLink",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.8.1": {
+    "entryPoint": "UserRestClient.UpdateUserDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.8.2": {
+    "entryPoint": "UserRestClient.GetUserDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.8.3": {
+    "entryPoint": "UsersRestClient.GetUsersDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.8.4": {
+    "entryPoint": "UserRestClient.DownloadUserPicture",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.8.5": {
+    "entryPoint": "UsersRestClient.InviteUsers",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.9.1": {
+    "entryPoint": "UserSettingsRestClient.UpdateUserSettings",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.9.2": {
+    "entryPoint": "UserSettingsRestClient.GetUserSettingsDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.10.1": {
+    "entryPoint": "TagsRestClient.GetTags",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.1": {
+    "entryPoint": "GroupsRestClient.CreateGroup",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.2": {
+    "entryPoint": "GroupRestClient.AddUsers",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.3": {
+    "entryPoint": "GroupRestClient.RemoveUsers",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.4": {
+    "entryPoint": "GroupRestClient.AddAdmins",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.5": {
+    "entryPoint": "GroupRestClient.RemoveAdmins",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.6": {
+    "entryPoint": "GroupRestClient.UpdateAdminPrivileges",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.7": {
+    "entryPoint": "GroupRestClient.UpdateGroup",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.8": {
+    "entryPoint": "GroupRestClient.RemoveGroup",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.9": {
+    "entryPoint": "GroupRestClient.GetGroupDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.11.10": {
+    "entryPoint": "GroupsRestClient.GetGroupsDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.12.1": {
+    "entryPoint": "TenantRestClient.UpdateTenant",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.12.2": {
+    "entryPoint": "TenantRestClient.GetTenantDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.12.3": {
+    "entryPoint": "TenantsRestClient.GetLoginTenantsDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.12.4": {
+    "entryPoint": "TenantsRestClient.SetDefaultTenant",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.13.1": {
+    "entryPoint": "TenantSettingsRestClient.UpdateTenantSettings",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.13.2": {
+    "entryPoint": "TenantSettingsRestClient.GetTenantSettingsDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.14.1": {
+    "entryPoint": "TenantFeaturesRestClient.GetTenantFeaturesDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.14.2": {
+    "entryPoint": "TenantFeaturesRestClient.EnableTenantFeature",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.15.1": {
+    "entryPoint": "TimelineRestClient.SearchTimeline",
+    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.15.2": {
+    "entryPoint": "TimelineRestClient.ScrollTimeline",
+    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.15.3": {
+    "entryPoint": "TimelineEventDetails",
+    "sourceStatus": "Implemented candidate PR87; independent review/merge pending.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.1": {
+    "entryPoint": "RulesRestClient.CreateRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.2": {
+    "entryPoint": "RulesRestClient.GetRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.3": {
+    "entryPoint": "RulesRestClient.GetRules",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.4": {
+    "entryPoint": "RulesRestClient.UpdateRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.5": {
+    "entryPoint": "RulesRestClient.ActivateRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.6": {
+    "entryPoint": "RulesRestClient.DeactivateRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.16.7": {
+    "entryPoint": "RulesRestClient.RemoveRule",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.17.1": {
+    "entryPoint": "StatisticsRestClient.GetStatistics",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.18.1": {
+    "entryPoint": "AuditLogRestClient.Search",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.18.2": {
+    "entryPoint": "AuditLogRestClient.Scroll",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.18.3": {
+    "entryPoint": "AuditLogEntry",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.19.1": {
+    "entryPoint": "TrashRestClient.GetDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded own-trash lifecycle/search acceptance; tenant-wide trash and other roles unverified."
+  },
+  "5.19.2": {
+    "entryPoint": "TrashRestClient.Search",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded own-trash lifecycle/search acceptance; tenant-wide trash and other roles unverified."
+  },
+  "5.19.3": {
+    "entryPoint": "TrashRestClient.RestoreDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded own-trash lifecycle/search acceptance; tenant-wide trash and other roles unverified."
+  },
+  "5.19.4": {
+    "entryPoint": "TrashRestClient.EraseDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded own-trash lifecycle/search acceptance; tenant-wide trash and other roles unverified."
+  },
+  "5.19.5": {
+    "entryPoint": "TrashRestClient.EraseAllDocuments",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "Bounded own-trash lifecycle/search acceptance; tenant-wide trash and other roles unverified."
+  },
+  "5.20.1": {
+    "entryPoint": "WorkflowsRestClient.CreateWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.2": {
+    "entryPoint": "WorkflowsRestClient.AssignToWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.3": {
+    "entryPoint": "WorkflowsRestClient.UnassignFromWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.4": {
+    "entryPoint": "WorkflowsRestClient.RespondToWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.5": {
+    "entryPoint": "WorkflowsRestClient.RemoveWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.6": {
+    "entryPoint": "WorkflowsRestClient.GetWorkflowDetails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.20.7": {
+    "entryPoint": "WorkflowsRestClient.GetWorkflows",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.1": {
+    "entryPoint": "WorkflowTemplatesRestClient.CreateWorkflowTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.2": {
+    "entryPoint": "WorkflowTemplatesRestClient.CreateWorkflow",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.3": {
+    "entryPoint": "WorkflowTemplatesRestClient.GetWorkflowTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.4": {
+    "entryPoint": "WorkflowTemplatesRestClient.GetWorkflowTemplates",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.5": {
+    "entryPoint": "WorkflowTemplatesRestClient.UpdateWorkflowTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.21.6": {
+    "entryPoint": "WorkflowTemplatesRestClient.RemoveWorkflowTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.22.1": {
+    "entryPoint": "UploadEmailsRestClient.CreateUploadEmail",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.22.2": {
+    "entryPoint": "UploadEmailsRestClient.GetUploadEmail",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.22.3": {
+    "entryPoint": "UploadEmailsRestClient.GetUploadEmails",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.22.4": {
+    "entryPoint": "UploadEmailsRestClient.UpdateUploadEmail",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.22.5": {
+    "entryPoint": "UploadEmailsRestClient.RemoveUploadEmail",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.23.1": {
+    "entryPoint": "UploadSftpsRestClient.CreateUploadSftp",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.23.2": {
+    "entryPoint": "UploadSftpsRestClient.GetUploadSftp",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.23.3": {
+    "entryPoint": "UploadSftpsRestClient.GetUploadSftps",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.23.4": {
+    "entryPoint": "UploadSftpsRestClient.UpdateUploadSftp",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.23.5": {
+    "entryPoint": "UploadSftpsRestClient.RemoveUploadSftp",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.24.1": {
+    "entryPoint": "SearchHistoryRestClient.GetHistory",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.24.2": {
+    "entryPoint": "SearchHistoryRestClient.AddTerm",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.24.3": {
+    "entryPoint": "SearchHistoryRestClient.RemoveEntries",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.25.1": {
+    "entryPoint": "RemindersRestClient.CreateReminder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.25.2": {
+    "entryPoint": "RemindersRestClient.GetReminder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.25.3": {
+    "entryPoint": "RemindersRestClient.GetReminders",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.25.4": {
+    "entryPoint": "RemindersRestClient.CompleteReminder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.25.5": {
+    "entryPoint": "RemindersRestClient.RemoveReminder",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.26.1": {
+    "entryPoint": "MetadataTemplatesRestClient.CreateMetadataTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.26.2": {
+    "entryPoint": "MetadataTemplatesRestClient.GetMetadataTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.26.3": {
+    "entryPoint": "MetadataTemplatesRestClient.GetMetadataTemplates",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.26.4": {
+    "entryPoint": "MetadataTemplatesRestClient.UpdateMetadataTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  },
+  "5.26.5": {
+    "entryPoint": "MetadataTemplatesRestClient.RemoveMetadataTemplate",
+    "sourceStatus": "Public workflow exists; final per-row parameter/model/permission parity audit remains separate.",
+    "liveEvidence": "No complete current operation/role acceptance claimed; consult bounded fixture evidence in #15."
+  }
+}
