@@ -10,6 +10,11 @@
     <ProjectReference Include="../CenterDevice.Rest/CenterDevice.Rest.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Exercise the sample's parsing without loading WebView2 or opening Windows. -->
+    <Compile Include="../CenterDevice.BrowserDemo/SessionTokens.cs" Link="BrowserDemo/SessionTokens.cs" />
+    <Compile Include="../CenterDevice.BrowserDemo/CapturedTokenProvider.cs" Link="BrowserDemo/CapturedTokenProvider.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- Download only: compare published contracts without referencing the old assembly. -->
     <PackageDownload Include="CompuMaster.CenterDevice.Rest" Version="[2026.10.9]" />
     <None Include="$(NuGetPackageRoot)compumaster.centerdevice.rest/2026.10.9/lib/netstandard2.0/CompuMaster.CenterDevice.Rest.dll"

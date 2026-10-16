@@ -38,6 +38,13 @@ These dates describe the document; they do not replace server audit timestamps.
 
 ## Clients supported
 
+An experimental Windows [embedded-browser session demo](CenterDevice.BrowserDemo/README.md)
+opens the normal CenterDevice login in WebView2 and observes the signed-in user's
+session tokens without a separate API client registration. It includes an explicit
+read-only SDK identity check. Actual web-token/API compatibility remains to be
+verified with an authorized account; this does not complete the registered OAuth
+acceptance or the direct DMS provider.
+
 * Scopevisio Teamwork (OpenScope)
 * MISSING: CenterDevice
   * the library already works for some 3rd party labels which indirectly involve the CenterDevice API.
