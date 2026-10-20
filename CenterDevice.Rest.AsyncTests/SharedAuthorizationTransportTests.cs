@@ -25,12 +25,17 @@ namespace CenterDevice.Rest.AsyncTests
                 var origin = "https://" + Guid.NewGuid().ToString("N") + ".invalid/";
                 var owner = first.GetAsync(origin + "oauth/token", firstCancel.Token);
                 await entered.Task;
+                var secondOwner = first.GetAsync(origin + "second", firstCancel.Token);
+                var thirdOwner = first.GetAsync(origin + "third", firstCancel.Token);
+                Assert.That(firstHandler.Calls, Is.EqualTo(3));
                 var queued = second.GetAsync(origin + "myaccount", secondCancel.Token);
                 secondCancel.Cancel();
                 Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await queued; }));
                 Assert.That(secondHandler.Calls, Is.Zero);
                 firstCancel.Cancel();
                 Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await owner; }));
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await secondOwner; }));
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await thirdOwner; }));
             }
         }
 

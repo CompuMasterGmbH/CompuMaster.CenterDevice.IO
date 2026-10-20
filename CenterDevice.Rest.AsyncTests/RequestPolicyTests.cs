@@ -15,6 +15,15 @@ namespace CenterDevice.Rest.AsyncTests
     public class RequestPolicyTests
     {
         [Test]
+        public async Task DefaultAdmissionDoesNotImposeAMinuteQuota()
+        {
+            var clock = new FakeClock();
+            var gate = new RequestAllowance(clock);
+            for (var i = 0; i < 65; i++) using (await gate.EnterAsync(CancellationToken.None)) { }
+            Assert.That(clock.Delays, Is.Empty);
+        }
+
+        [Test]
         public async Task RetryAfterOnAMutationDefersOtherRequestsWithoutReplayingTheMutation()
         {
             var clock = new FakeClock();
@@ -44,6 +53,8 @@ namespace CenterDevice.Rest.AsyncTests
             var secondHandler = new FakeHandler((request, token) => Task.FromResult(Response(HttpStatusCode.OK)));
             using (var first = new HttpClient(new CenterDeviceHttpMessageHandler(firstHandler)))
             using (var second = new HttpClient(new CenterDeviceHttpMessageHandler(secondHandler)))
+            using (var secondResponse = await first.GetAsync(origin + "second", HttpCompletionOption.ResponseHeadersRead))
+            using (var thirdResponse = await first.GetAsync(origin + "third", HttpCompletionOption.ResponseHeadersRead))
             using (var response = await first.GetAsync(origin, HttpCompletionOption.ResponseHeadersRead))
             using (var cancellation = new CancellationTokenSource())
             {
@@ -66,7 +77,7 @@ namespace CenterDevice.Rest.AsyncTests
         public async Task DisposingAnUnreadResponseReleasesTheSharedAllowance()
         {
             var clock = new FakeClock();
-            var gate = new RequestAllowance(clock);
+            var gate = new RequestAllowance(clock, maxConcurrent: 1);
             var transport = new FakeHandler((request, token) => Task.FromResult(Response(HttpStatusCode.OK)));
             using (var client = Client(transport, clock, gate))
             {
@@ -110,7 +121,7 @@ namespace CenterDevice.Rest.AsyncTests
         public async Task RateAdmissionUsesASeparateRollingWindow()
         {
             var clock = new FakeClock();
-            var gate = new RequestAllowance(clock);
+            var gate = new RequestAllowance(clock, maxRequestsPerMinute: 30);
             for (var i = 0; i < 30; i++) using (await gate.EnterAsync(CancellationToken.None)) { }
             using (await gate.EnterAsync(CancellationToken.None)) { }
             Assert.That(clock.Delays, Is.EqualTo(new[] { TimeSpan.FromMinutes(1) }));
@@ -168,7 +179,7 @@ namespace CenterDevice.Rest.AsyncTests
         public async Task RetryBudgetRetainsFinalDiagnosticsWhenRateAdmissionTakesTooLong()
         {
             var clock = new FakeClock();
-            var gate = new RequestAllowance(clock);
+            var gate = new RequestAllowance(clock, maxRequestsPerMinute: 30);
             for (var i = 0; i < 29; i++) using (await gate.EnterAsync(CancellationToken.None)) { }
             var transport = new FakeHandler((request, token) => Task.FromResult(Response(HttpStatusCode.ServiceUnavailable)));
             using (var client = Client(transport, clock, gate))
@@ -178,6 +189,136 @@ namespace CenterDevice.Rest.AsyncTests
                 Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("diagnostic"));
                 Assert.That(clock.UtcNow, Is.EqualTo(clock.Initial.AddMinutes(1)));
             }
+        }
+
+        [TestCase(429, false), TestCase(503, true)]
+        public async Task QueuedRequestsRecheckSharedCooldownAfterAWriteResponse(int status, bool date)
+        {
+            var clock = new FakeClock();
+            var gate = new RequestAllowance(clock);
+            var transport = new FakeHandler((request, token) =>
+            {
+                var response = Response((HttpStatusCode)status);
+                response.Headers.RetryAfter = date ? new RetryConditionHeaderValue(clock.UtcNow.AddSeconds(7)) : new RetryConditionHeaderValue(TimeSpan.FromSeconds(7));
+                return Task.FromResult(response);
+            });
+            using (var one = await gate.EnterAsync(CancellationToken.None))
+            using (var two = await gate.EnterAsync(CancellationToken.None))
+            using (var client = Client(transport, clock, gate))
+            using (var write = new HttpRequestMessage(HttpMethod.Post, "https://example.test/write") { Content = new StringContent("data") })
+            using (var response = await client.SendAsync(write, HttpCompletionOption.ResponseHeadersRead))
+            {
+                var queued = gate.EnterAsync(CancellationToken.None);
+                Assert.That(queued.IsCompleted, Is.False);
+                response.Dispose();
+                using (await queued) { }
+                Assert.That(clock.Delays, Is.EqualTo(new[] { TimeSpan.FromSeconds(7) }));
+                Assert.That(transport.Calls, Is.EqualTo(1));
+            }
+        }
+
+        [TestCase(429), TestCase(503)]
+        public async Task OverloadWithoutRetryAfterStillDefersOtherRequests(int status)
+        {
+            var clock = new FakeClock();
+            var gate = new RequestAllowance(clock);
+            var transport = new FakeHandler((request, token) => Task.FromResult(Response((HttpStatusCode)status)));
+            using (var client = Client(transport, clock, gate))
+            {
+                using (await client.PostAsync("https://example.test/write", new StringContent("data"))) { }
+                using (await gate.EnterAsync(CancellationToken.None)) { }
+                Assert.That(clock.Delays.Count, Is.EqualTo(1));
+                Assert.That(clock.Delays[0], Is.GreaterThanOrEqualTo(TimeSpan.FromMilliseconds(250)));
+                Assert.That(transport.Calls, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task PublicRateConfigurationIsSharedAndCannotChangeAfterRequestsStart()
+        {
+            var origin = new Uri("https://" + Guid.NewGuid().ToString("N") + ".test/path");
+            CenterDeviceHttpTransport.ConfigureRequestRateLimit(origin, 1);
+            var gate = CenterDeviceHttpMessageHandler.GetAllowance(new Uri(origin, "/different-path"));
+            var transport = new FakeHandler((request, token) => Task.FromResult(Response(HttpStatusCode.OK)));
+            using (var first = CenterDeviceHttpTransport.CreateHttpClient(transport))
+            using (await first.GetAsync(origin)) { }
+            Assert.Throws<InvalidOperationException>((Action)(() => CenterDeviceHttpTransport.ConfigureRequestRateLimit(origin, null)));
+            using (var cancellation = new CancellationTokenSource())
+            {
+                var queued = gate.EnterAsync(cancellation.Token);
+                Assert.That(queued.IsCompleted, Is.False);
+                cancellation.Cancel();
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { using (await queued) { } }));
+            }
+        }
+
+        [TestCase(0), TestCase(-1)]
+        public void RejectsInvalidPublicRateLimit(int value)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>((Action)(() => CenterDeviceHttpTransport.ConfigureRequestRateLimit(new Uri("https://invalid-limit.test"), value)));
+        }
+
+        [Test]
+        public async Task ExplicitlyDisabledRateLimitDoesNotWaitAndInvalidOriginsAreRejected()
+        {
+            Assert.Throws<ArgumentNullException>((Action)(() => CenterDeviceHttpTransport.ConfigureRequestRateLimit(null, 1)));
+            Assert.Throws<ArgumentException>((Action)(() => CenterDeviceHttpTransport.ConfigureRequestRateLimit(new Uri("relative", UriKind.Relative), 1)));
+            Assert.Throws<ArgumentException>((Action)(() => CenterDeviceHttpTransport.ConfigureRequestRateLimit(new Uri("ftp://example.test"), 1)));
+            var gate = new RequestAllowance(new FakeClock());
+            gate.ConfigureRateLimit(1);
+            gate.ConfigureRateLimit(null);
+            for (var i = 0; i < 65; i++) using (await gate.EnterAsync(CancellationToken.None)) { }
+        }
+
+        [Test]
+        public async Task CancellationWhileWaitingForServerCooldownReleasesAdmission()
+        {
+            var clock = new BlockingClock();
+            var gate = new RequestAllowance(clock);
+            gate.DeferUntil(clock.UtcNow.AddMinutes(1));
+            using (var cancellation = new CancellationTokenSource())
+            {
+                var pending = gate.EnterAsync(cancellation.Token);
+                await clock.Waiting.Task;
+                cancellation.Cancel();
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { using (await pending) { } }));
+            }
+            clock.UtcNow += TimeSpan.FromMinutes(1);
+            using (var one = await gate.EnterAsync(CancellationToken.None))
+            using (var two = await gate.EnterAsync(CancellationToken.None))
+            using (var three = await gate.EnterAsync(CancellationToken.None)) { }
+        }
+
+        private sealed class BlockingClock : IRequestClock
+        {
+            internal readonly TaskCompletionSource<bool> Waiting = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            public DateTimeOffset UtcNow { get; set; } = new DateTimeOffset(2026, 10, 20, 0, 0, 0, TimeSpan.Zero);
+            public Task DelayAsync(TimeSpan delay, CancellationToken token)
+            {
+                Waiting.TrySetResult(true);
+                return Task.Delay(Timeout.Infinite, token);
+            }
+        }
+
+        [Test]
+        public void OriginAdmissionIgnoresUserInfoPathAndDefaultPortButSeparatesOtherPorts()
+        {
+            var host = Guid.NewGuid().ToString("N") + ".test";
+            var gate = CenterDeviceHttpMessageHandler.GetAllowance(new Uri("https://" + host + "/first"));
+            Assert.That(CenterDeviceHttpMessageHandler.GetAllowance(new Uri("https://fixture-user@" + host.ToUpperInvariant() + ":443/second")), Is.SameAs(gate));
+            Assert.That(CenterDeviceHttpMessageHandler.GetAllowance(new Uri("https://" + host + ":8443/")), Is.Not.SameAs(gate));
+            Assert.That(CenterDeviceHttpMessageHandler.GetAllowance(new Uri("http://" + host + "/")), Is.Not.SameAs(gate));
+        }
+
+        [Test]
+        public async Task ShorterCooldownDoesNotOverrideAnExistingLongerCooldown()
+        {
+            var clock = new FakeClock();
+            var gate = new RequestAllowance(clock);
+            gate.DeferUntil(clock.UtcNow.AddSeconds(7));
+            gate.DeferUntil(clock.UtcNow.AddSeconds(2));
+            using (await gate.EnterAsync(CancellationToken.None)) { }
+            Assert.That(clock.Delays, Is.EqualTo(new[] { TimeSpan.FromSeconds(7) }));
         }
 
         private static HttpClient Client(FakeHandler transport, FakeClock clock, RequestAllowance gate)

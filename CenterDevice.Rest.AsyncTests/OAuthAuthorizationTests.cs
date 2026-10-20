@@ -218,13 +218,18 @@ namespace CenterDevice.Rest.AsyncTests
             {
                 var owner = first.ExchangeAuthorizationCodeAsync(callback, "state", firstCancel.Token);
                 await firstHandler.Entered.Task;
+                var secondOwner = first.ExchangeAuthorizationCodeAsync(callback, "state", firstCancel.Token);
+                var thirdOwner = first.ExchangeAuthorizationCodeAsync(callback, "state", firstCancel.Token);
+                Assert.That(firstHandler.Calls, Is.EqualTo(3));
                 var queued = second.ExchangeAuthorizationCodeAsync(callback, "state", secondCancel.Token);
                 secondCancel.Cancel();
                 Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await queued; }));
                 Assert.That(secondHandler.Calls, Is.Zero);
                 firstCancel.Cancel();
                 Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await owner; }));
-                Assert.That(firstHandler.Calls, Is.EqualTo(1));
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await secondOwner; }));
+                Assert.CatchAsync<OperationCanceledException>((Func<Task>)(async () => { await thirdOwner; }));
+                Assert.That(firstHandler.Calls, Is.EqualTo(3));
             }
         }
 
