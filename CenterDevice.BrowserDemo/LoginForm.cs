@@ -32,6 +32,8 @@ namespace CenterDevice.BrowserDemo
         private bool verifying;
         private bool closing;
         private int browserGeneration;
+        private int apiRequests;
+        private string browserDiagnostics = "";
         // Created only after the API has confirmed the identity, never from a login name or an unverified token claim.
         private CenterDeviceIOClient ioClient;
 
@@ -125,6 +127,7 @@ namespace CenterDevice.BrowserDemo
         private void OnWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
         {
             if (!observing || closing || !SessionTokens.IsApi(e.Request.Uri)) return;
+            apiRequests++;
             var header = e.Request.Headers.Contains("Authorization") ? e.Request.Headers.GetHeader("Authorization") : null;
             Observe(SessionTokens.FromBearer(e.Request.Uri, header), "Bearer-Header an api.centerdevice.de");
         }
@@ -178,13 +181,33 @@ namespace CenterDevice.BrowserDemo
                     if (!CanObserve(generation)) return;
                     Observe(SessionTokens.FromJson(json), "Web-Speicher der CenterDevice-Seite", true);
                 }
+                var cookieNames = new HashSet<string>(StringComparer.Ordinal);
+                bool hasSessionCookie = false;
+                bool hasTokenNamedCookie = false;
                 foreach (var origin in new[] { "https://auth.centerdevice.de/", "https://app.centerdevice.de/", SessionTokens.ApiUrl })
                 {
                     var cookies = await core.CookieManager.GetCookiesAsync(origin);
                     if (!CanObserve(generation)) return;
+                    foreach (var cookie in cookies)
+                    {
+                        // Only counts/classification reach the UI. Names, values and session IDs are not printed or logged.
+                        cookieNames.Add(cookie.Domain + "\n" + cookie.Path + "\n" + cookie.Name);
+                        hasSessionCookie |= SessionTokens.IsSessionCookieName(cookie.Name);
+                        hasTokenNamedCookie |= cookie.Name.IndexOf("token", StringComparison.OrdinalIgnoreCase) >= 0
+                            || cookie.Name.IndexOf("oauth", StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
                     // A pair must belong to the same cookie domain and path; never pair across hosts/scopes.
                     foreach (var scope in cookies.GroupBy(c => new { c.Domain, c.Path }))
                         Observe(SessionTokens.FromFields(scope.Select(c => new KeyValuePair<string, string>(c.Name, c.Value))), "Token-Cookies der CenterDevice-Sitzung", true);
+                }
+                browserDiagnostics = "Browser-Diagnose: " + cookieNames.Count + " Cookies; Session-Cookie: "
+                    + (hasSessionCookie ? "vorhanden" : "nicht erkannt") + "; Cookie mit Token-Namen: "
+                    + (hasTokenNamedCookie ? "vorhanden" : "nicht erkannt") + "; Anfragen an die öffentliche API: " + apiRequests + ".";
+                if (session.Tokens == null)
+                {
+                    if (SessionTokens.IsWebApplicationPage(core.Source))
+                        status.Text = "Webanmeldung erfolgt. Bisher kein API-Access-Token erkannt. Die Websitzung kann serverseitig verwaltet sein.";
+                    RefreshDisplay();
                 }
             }
             catch (Exception) { /* Storage may be unavailable while a page is navigating. */ }
@@ -208,7 +231,7 @@ namespace CenterDevice.BrowserDemo
             access.Text = session.Tokens?.access_token ?? "";
             refresh.Text = session.Tokens?.refresh_token ?? "";
             verify.Enabled = session.Tokens != null && !verifying;
-            details.Text = session.Tokens == null ? "Tokenwerte bleiben bis zum Erkennen leer. Die Demo speichert keine Tokens in Dateien."
+            details.Text = session.Tokens == null ? "Tokenwerte bleiben bis zum Erkennen leer. Die Demo speichert keine Tokens in Dateien.\r\n" + browserDiagnostics
                 : "Quelle: " + session.Source + "\r\nRefresh-Token: " + (session.Tokens.refresh_token == null ? "nicht verfügbar" : "vorhanden")
                     + ". Automatische Erneuerung ist nicht implementiert.\r\nSchließen beendet das private Browserprofil. „Neue Anmeldung“ löscht zusätzlich dessen Browserdaten.";
         }
@@ -260,6 +283,8 @@ namespace CenterDevice.BrowserDemo
             requestCancellation.Cancel();
             browser.CoreWebView2.Stop();
             session.Clear();
+            apiRequests = 0;
+            browserDiagnostics = "";
             ioClient = null;
             reveal.Checked = false;
             RefreshDisplay();

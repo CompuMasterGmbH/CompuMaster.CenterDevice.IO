@@ -28,6 +28,25 @@ namespace CenterDevice.Rest.AsyncTests
         public void CaptureRequiresExactHttpsSessionOrigin(string address, bool accepted)
             => Assert.That(SessionTokens.IsSessionOrigin(address), Is.EqualTo(accepted));
 
+        [TestCase("https://app.centerdevice.de/tenant/test/view/search", true)]
+        [TestCase("https://auth.centerdevice.de/weblogin", false)]
+        [TestCase("https://app.centerdevice.de/login", false)]
+        [TestCase("http://app.centerdevice.de/tenant/test", false)]
+        [TestCase("https://app.centerdevice.de.evil.invalid/tenant/test", false)]
+        [TestCase("https://user@app.centerdevice.de/tenant/test", false)]
+        public void WebApplicationNavigationIsSeparateFromApiTokenAcquisition(string address, bool accepted)
+            => Assert.That(SessionTokens.IsWebApplicationPage(address), Is.EqualTo(accepted));
+
+        [Test]
+        public void ServerSessionCookiesNeverBecomeOAuthTokens()
+        {
+            var fields = new Dictionary<string, string> { ["JSESSIONID"] = "synthetic-session", ["SESSION"] = "synthetic-other-session" };
+            Assert.That(SessionTokens.IsSessionCookieName("JSESSIONID"), Is.True);
+            Assert.That(SessionTokens.IsSessionCookieName("SESSION"), Is.True);
+            Assert.That(SessionTokens.IsSessionCookieName("access_token"), Is.False);
+            Assert.That(SessionTokens.FromFields(fields), Is.Null);
+        }
+
         [TestCase("https://api.centerdevice.de/v2/users/current", "Bearer synthetic-access", true)]
         [TestCase("https://api.centerdevice.de/v2/users/current", "bearer synthetic-access", true)]
         [TestCase("https://auth.centerdevice.de/token", "Bearer synthetic-access", false)]

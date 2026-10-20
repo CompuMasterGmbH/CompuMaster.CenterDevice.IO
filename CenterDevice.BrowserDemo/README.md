@@ -93,3 +93,24 @@ Actual account login, token acquisition and public-API acceptance require a manu
 end-to-end check with an authorized account. Isolated tests and a visible login
 page do not prove those checks. Issue #1 remains open until its working-sample
 acceptance is established.
+
+### Live trial observation (2026-10-20)
+
+The normal trial-account login was completed in the embedded browser, which then
+displayed the authenticated tenant's web application. The observed browser state
+contained two cookies, including a recognized server-session cookie, no cookie
+with a token/OAuth name, and no direct requests to `api.centerdevice.de`. The
+capture did not find a usable access/refresh token in the inspected sources.
+The read-only SDK action therefore remained disabled and no SDK identity call
+was made. No documents, collections or account settings were changed.
+
+This result is consistent with a server-managed web session. It does not prove
+that every CenterDevice web flow or account exposes the same state. Session
+cookies are not interchangeable with OAuth bearer tokens and are never passed
+to the SDK as such. Registered-client OAuth acceptance remains separate.
+
+The demo distinguishes reaching a tenant web page from acquiring an API token.
+Its diagnostic line shows cookie counts, known session-cookie/token-name flags,
+and the number of public-API requests. It never displays cookie names, cookie
+values, session IDs or request URLs in that diagnostic line. Counts describe
+only the three configured origins and are not a complete network inventory.

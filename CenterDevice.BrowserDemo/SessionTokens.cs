@@ -25,6 +25,13 @@ namespace CenterDevice.BrowserDemo
         internal static bool IsApi(string address) => IsSessionOrigin(address)
             && new Uri(address).Host.Equals("api.centerdevice.de", StringComparison.OrdinalIgnoreCase);
 
+        internal static bool IsWebApplicationPage(string address) => IsSessionOrigin(address)
+            && new Uri(address).Host.Equals("app.centerdevice.de", StringComparison.OrdinalIgnoreCase)
+            && new Uri(address).AbsolutePath.StartsWith("/tenant/", StringComparison.Ordinal);
+
+        internal static bool IsSessionCookieName(string name) => string.Equals(name, "JSESSIONID", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "SESSION", StringComparison.OrdinalIgnoreCase);
+
         internal static bool IsTokenResponse(string address)
         {
             if (!IsSessionOrigin(address)) return false;
