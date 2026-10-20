@@ -184,7 +184,7 @@ namespace CenterDevice.BrowserDemo
                 var cookieNames = new HashSet<string>(StringComparer.Ordinal);
                 bool hasSessionCookie = false;
                 bool hasTokenNamedCookie = false;
-                foreach (var origin in new[] { "https://auth.centerdevice.de/", "https://app.centerdevice.de/", SessionTokens.ApiUrl })
+                foreach (var origin in SessionTokens.CookieInspectionAddresses(core.Source))
                 {
                     var cookies = await core.CookieManager.GetCookiesAsync(origin);
                     if (!CanObserve(generation)) return;

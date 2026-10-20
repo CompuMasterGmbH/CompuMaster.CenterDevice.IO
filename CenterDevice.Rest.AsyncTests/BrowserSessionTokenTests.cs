@@ -47,6 +47,24 @@ namespace CenterDevice.Rest.AsyncTests
             Assert.That(SessionTokens.FromFields(fields), Is.Null);
         }
 
+        [Test]
+        public void CookieInspectionIncludesTenantScopedCookiesWithoutCopyingQueryOrFragment()
+        {
+            var addresses = SessionTokens.CookieInspectionAddresses("https://app.centerdevice.de/tenant/test/view/search?private=not-forwarded#fragment");
+            Assert.That(addresses, Does.Contain("https://app.centerdevice.de/tenant/test/view/search"));
+            Assert.That(addresses, Does.Contain(SessionTokens.LoginUrl));
+            Assert.That(addresses, Does.Contain(SessionTokens.ApiUrl + "v2/user/current"));
+            Assert.That(string.Join("\n", addresses), Does.Not.Contain("private=").And.Not.Contain("#fragment"));
+        }
+
+        [TestCase("https://identity-provider.invalid/tenant/test")]
+        [TestCase("http://app.centerdevice.de/tenant/test")]
+        [TestCase("https://user@app.centerdevice.de/tenant/test")]
+        public void CookieInspectionExcludesUntrustedCurrentPages(string currentAddress)
+        {
+            Assert.That(SessionTokens.CookieInspectionAddresses(currentAddress), Does.Not.Contain(currentAddress));
+        }
+
         [TestCase("https://api.centerdevice.de/v2/users/current", "Bearer synthetic-access", true)]
         [TestCase("https://api.centerdevice.de/v2/users/current", "bearer synthetic-access", true)]
         [TestCase("https://auth.centerdevice.de/token", "Bearer synthetic-access", false)]

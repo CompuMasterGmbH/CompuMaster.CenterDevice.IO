@@ -32,6 +32,15 @@ namespace CenterDevice.BrowserDemo
         internal static bool IsSessionCookieName(string name) => string.Equals(name, "JSESSIONID", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "SESSION", StringComparison.OrdinalIgnoreCase);
 
+        internal static IEnumerable<string> CookieInspectionAddresses(string currentAddress)
+        {
+            var addresses = new List<string> { "https://auth.centerdevice.de/", LoginUrl,
+                "https://app.centerdevice.de/", ApiUrl, ApiUrl + "v2/user/current" };
+            // Root-only queries omit cookies scoped to the login or authenticated tenant path.
+            if (IsSessionOrigin(currentAddress)) addresses.Add(new Uri(currentAddress).GetLeftPart(UriPartial.Path));
+            return addresses.Distinct(StringComparer.Ordinal);
+        }
+
         internal static bool IsTokenResponse(string address)
         {
             if (!IsSessionOrigin(address)) return false;
