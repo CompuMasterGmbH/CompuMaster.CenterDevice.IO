@@ -22,8 +22,7 @@ namespace CenterDevice.Rest.Clients
             : this(inner, true) { }
 
         internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner, bool retryReads)
-            : this(inner, new SystemRequestClock(), uri => Allowances.GetOrAdd(
-                uri.GetLeftPart(UriPartial.Authority), key => new RequestAllowance(new SystemRequestClock())), retryReads) { }
+            : this(inner, new SystemRequestClock(), GetAllowance, retryReads) { }
 
         internal CenterDeviceHttpMessageHandler(HttpMessageHandler inner, IRequestClock clock, Func<Uri, RequestAllowance> allowance)
             : this(inner, clock, allowance, true) { }
@@ -34,6 +33,15 @@ namespace CenterDevice.Rest.Clients
             this.clock = clock;
             this.allowance = allowance;
             this.retryReads = retryReads;
+        }
+
+        internal static RequestAllowance GetAllowance(Uri serviceUri)
+        {
+            if (serviceUri == null) throw new ArgumentNullException(nameof(serviceUri));
+            if (!serviceUri.IsAbsoluteUri || (serviceUri.Scheme != Uri.UriSchemeHttp && serviceUri.Scheme != Uri.UriSchemeHttps))
+                throw new ArgumentException("An absolute HTTP or HTTPS service URI is required.", nameof(serviceUri));
+            var origin = serviceUri.Scheme + Uri.SchemeDelimiter + serviceUri.IdnHost + ":" + serviceUri.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return Allowances.GetOrAdd(origin, key => new RequestAllowance(new SystemRequestClock()));
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -53,6 +61,7 @@ namespace CenterDevice.Rest.Clients
                     return previous;
                 }
                 HttpResponseMessage response;
+                TimeSpan? overloadDelay = null;
                 HttpRequestMessage retryRequest = null;
                 try
                 {
@@ -71,9 +80,8 @@ namespace CenterDevice.Rest.Clients
                     }
                     if ((int)response.StatusCode == 429 || response.StatusCode == HttpStatusCode.ServiceUnavailable)
                     {
-                        var after = response.Headers.RetryAfter;
-                        if (after?.Delta != null) requestAllowance.DeferUntil(clock.UtcNow + after.Delta.Value);
-                        else if (after?.Date != null) requestAllowance.DeferUntil(after.Date.Value);
+                        overloadDelay = RetryDelay(response, attempt);
+                        requestAllowance.DeferUntil(clock.UtcNow + overloadDelay.Value);
                     }
                     if (response.Content == null) slot.Dispose();
                     else response.Content = new LeasedContent(response.Content, slot);
@@ -91,7 +99,7 @@ namespace CenterDevice.Rest.Clients
                 previous = null;
 
                 if (!read || attempt >= 2 || !IsTransient(response.StatusCode)) return response;
-                var delay = RetryDelay(response, attempt);
+                var delay = overloadDelay ?? RetryDelay(response, attempt);
                 if (clock.UtcNow - started + delay >= TimeSpan.FromSeconds(30)) return response;
                 // Release the request allowance before waiting. Keep the final response for diagnostics
                 // if rate admission consumes the remaining retry budget.
@@ -182,46 +190,65 @@ namespace CenterDevice.Rest.Clients
 
     internal sealed class RequestAllowance
     {
-        private readonly SemaphoreSlim concurrent = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim concurrent;
         private readonly Queue<DateTimeOffset> starts = new Queue<DateTimeOffset>();
         private readonly IRequestClock clock;
-        private long resumeAtTicks;
+        private int? maxRequestsPerMinute;
+        private bool started;
+        private DateTimeOffset resumeAt;
 
-        internal RequestAllowance(IRequestClock clock) { this.clock = clock; }
+        internal RequestAllowance(IRequestClock clock, int maxConcurrent = 3, int? maxRequestsPerMinute = null)
+        {
+            if (maxConcurrent < 1) throw new ArgumentOutOfRangeException(nameof(maxConcurrent));
+            if (maxRequestsPerMinute.HasValue && maxRequestsPerMinute.Value < 1) throw new ArgumentOutOfRangeException(nameof(maxRequestsPerMinute));
+            this.clock = clock;
+            this.maxRequestsPerMinute = maxRequestsPerMinute;
+            concurrent = new SemaphoreSlim(maxConcurrent, maxConcurrent);
+        }
+
+        internal void ConfigureRateLimit(int? value)
+        {
+            if (value.HasValue && value.Value < 1) throw new ArgumentOutOfRangeException(nameof(value));
+            lock (starts)
+            {
+                if (started) throw new InvalidOperationException("Configure the rate limit before the first request to this origin.");
+                maxRequestsPerMinute = value;
+            }
+        }
 
         internal void DeferUntil(DateTimeOffset resumeAt)
         {
-            var next = resumeAt.UtcTicks;
-            long previous;
-            do
-            {
-                previous = Interlocked.Read(ref resumeAtTicks);
-                if (next <= previous) return;
-            } while (Interlocked.CompareExchange(ref resumeAtTicks, next, previous) != previous);
+            lock (starts) if (resumeAt > this.resumeAt) this.resumeAt = resumeAt;
         }
 
         internal async Task<IDisposable> EnterAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (starts) started = true;
             await concurrent.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var now = clock.UtcNow;
-                    var cooldown = new DateTimeOffset(Interlocked.Read(ref resumeAtTicks), TimeSpan.Zero);
-                    if (cooldown > now)
+                    TimeSpan delay;
+                    lock (starts)
                     {
-                        await clock.DelayAsync(cooldown - now, cancellationToken).ConfigureAwait(false);
-                        continue;
+                        var now = clock.UtcNow;
+                        delay = resumeAt - now;
+                        if (delay <= TimeSpan.Zero)
+                        {
+                            if (!maxRequestsPerMinute.HasValue) return new Slot(concurrent);
+                            while (starts.Count > 0 && now - starts.Peek() >= TimeSpan.FromMinutes(1)) starts.Dequeue();
+                            if (starts.Count < maxRequestsPerMinute.Value)
+                            {
+                                starts.Enqueue(now);
+                                return new Slot(concurrent);
+                            }
+                            delay = starts.Peek() + TimeSpan.FromMinutes(1) - now;
+                        }
                     }
-                    while (starts.Count > 0 && now - starts.Peek() >= TimeSpan.FromMinutes(1)) starts.Dequeue();
-                    if (starts.Count < 30)
-                    {
-                        starts.Enqueue(now);
-                        return new Slot(concurrent);
-                    }
-                    await clock.DelayAsync(starts.Peek() + TimeSpan.FromMinutes(1) - now, cancellationToken).ConfigureAwait(false);
+                    await clock.DelayAsync(delay, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch { concurrent.Release(); throw; }
